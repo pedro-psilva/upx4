@@ -1,0 +1,369 @@
+{% extends "base.html" %}
+
+{% block title %}{{ proposal.title }} - Meu Bairro Melhor{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+    <!-- Back Button -->
+    <div>
+        <a href="{{ url_for('index') }}" class="inline-flex items-center text-gray-600 hover:text-gray-900">
+            <i class="fas fa-arrow-left mr-2"></i>Voltar para Propostas
+        </a>
+    </div>
+
+    <!-- Proposal Header -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div class="flex items-start justify-between mb-4">
+            <div class="flex-1">
+                <h1 class="text-2xl font-bold text-gray-900 mb-2">{{ proposal.title }}</h1>
+                
+                <div class="flex items-center space-x-4 text-sm text-gray-500 mb-4">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-{{ proposal.category_obj.icon }}" style="color: {{ proposal.category_obj.color }}"></i>
+                        <span>{{ proposal.category_obj.name }}</span>
+                    </div>
+                    <span>•</span>
+                    <span class="status-{{ proposal.status }} px-2 py-1 rounded-full">
+                        {% if proposal.status == 'pending' %}Pendente
+                        {% elif proposal.status == 'approved' %}Aprovado
+                        {% elif proposal.status == 'in_progress' %}Em Andamento
+                        {% elif proposal.status == 'completed' %}Concluído
+                        {% elif proposal.status == 'rejected' %}Rejeitado
+                        {% endif %}
+                    </span>
+                    <span>•</span>
+                    <span class="priority-{{ proposal.priority }} px-2 py-1 rounded-full">
+                        {% if proposal.priority == 'low' %}Baixa
+                        {% elif proposal.priority == 'medium' %}Média
+                        {% elif proposal.priority == 'high' %}Alta
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Actions -->
+            <div id="votes" class="flex items-center space-x-2">
+                <button onclick="voteProposal({{ proposal.id }})" 
+                        id="voteButton"
+                        class="px-4 py-2 rounded-md transition-colors {% if user_voted %}bg-green-600 hover:bg-green-700 text-white{% else %}bg-blue-600 hover:bg-blue-700 text-white{% endif %}">
+                    <i class="fas fa-thumbs-up mr-2"></i>
+                    <span id="voteText">{% if user_voted %}Desvotar{% else %}Votar{% endif %}</span>
+                </button>
+                
+                <button onclick="shareProposal()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors">
+                    <i class="fas fa-share mr-2"></i>Compartilhar
+                </button>
+            </div>
+        </div>
+        
+        <!-- Description -->
+        <div class="prose max-w-none">
+            <p class="text-gray-700 leading-relaxed">{{ proposal.description }}</p>
+        </div>
+        
+        <!-- Location -->
+        <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+            <div class="flex items-center text-gray-600 mb-2">
+                <i class="fas fa-map-marker-alt mr-2"></i>
+                <span class="font-medium">Localização</span>
+            </div>
+            <p class="text-gray-700">{{ proposal.address }}</p>
+        </div>
+    </div>
+
+    <!-- Stats and Author -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Stats -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Estatísticas</h3>
+            
+            <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-600">Votos</span>
+                    <span class="text-2xl font-bold text-blue-600" id="votesCount">{{ proposal.votes_count }}</span>
+                </div>
+                
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-600">Comentários</span>
+                    <span class="text-2xl font-bold text-green-600" id="commentsCount">{{ proposal.comments_count }}</span>
+                </div>
+                
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-600">Criado em</span>
+                    <span class="text-gray-900">{{ proposal.created_at.strftime('%d/%m/%Y às %H:%M') }}</span>
+                </div>
+                
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-600">Atualizado em</span>
+                    <span class="text-gray-900">{{ proposal.updated_at.strftime('%d/%m/%Y às %H:%M') }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Author -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Autor</h3>
+            
+            <div class="flex items-center space-x-3">
+                <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center">
+                    <span class="text-white text-lg font-medium">{{ proposal.author.name[0].upper() }}</span>
+                </div>
+                <div>
+                    <p class="font-medium text-gray-900">{{ proposal.author.name }}</p>
+                    <p class="text-sm text-gray-500">Membro da comunidade</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Map -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div class="p-4 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-900">Localização no Mapa</h3>
+        </div>
+        <div id="proposalMap" style="height: 300px;"></div>
+    </div>
+
+    <!-- Comments Section -->
+    <div id="comments" class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-lg font-semibold text-gray-900">
+                Comentários (<span id="commentsCountHeader">{{ proposal.comments_count }}</span>)
+            </h3>
+        </div>
+        
+        <!-- Add Comment Form -->
+        {% if current_user.is_authenticated %}
+        <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+            <form id="commentForm">
+                <div class="mb-3">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Adicionar Comentário</label>
+                    <textarea id="commentContent" rows="3" 
+                              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              placeholder="Escreva seu comentário..."></textarea>
+                </div>
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                    <i class="fas fa-comment mr-2"></i>Comentar
+                </button>
+            </form>
+        </div>
+        {% else %}
+        <div class="mb-6 p-4 bg-blue-50 rounded-lg text-center">
+            <p class="text-gray-600 mb-3">Faça login para comentar</p>
+            <button onclick="openLoginModal()" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                <i class="fas fa-sign-in-alt mr-2"></i>Fazer Login
+            </button>
+        </div>
+        {% endif %}
+        
+        <!-- Comments List -->
+        <div id="commentsList" class="space-y-4">
+            {% for comment in comments %}
+            <div class="border-b border-gray-100 pb-4 last:border-b-0">
+                <div class="flex items-start space-x-3">
+                    <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span class="text-white text-sm font-medium">{{ comment.author_name[0].upper() }}</span>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center space-x-2 mb-1">
+                            <span class="font-medium text-gray-900">{{ comment.author_name }}</span>
+                            <span class="text-sm text-gray-500">{{ comment.created_at.strftime('%d/%m/%Y às %H:%M') }}</span>
+                        </div>
+                        <p class="text-gray-700">{{ comment.content }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            
+            {% if not comments %}
+            <div class="text-center py-8 text-gray-500">
+                <i class="fas fa-comments text-4xl mb-4"></i>
+                <p>Nenhum comentário ainda. Seja o primeiro a comentar!</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let proposalMap;
+    let userVoted = {{ 'true' if user_voted else 'false' }};
+    
+    // Initialize proposal map
+    function initProposalMap() {
+        proposalMap = L.map('proposalMap').setView([{{ proposal.latitude }}, {{ proposal.longitude }}], 15);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(proposalMap);
+        
+        // Add marker for this proposal
+        const category = {
+            name: '{{ proposal.category_obj.name }}',
+            icon: '{{ proposal.category_obj.icon }}',
+            color: '{{ proposal.category_obj.color }}'
+        };
+        
+        const icon = L.divIcon({
+            className: 'custom-marker',
+            html: `
+                <div class="w-8 h-8 rounded-full border-2 border-white shadow-lg flex items-center justify-center" 
+                     style="background-color: ${category.color}">
+                    <i class="fas fa-${category.icon} text-white text-sm"></i>
+                </div>
+            `,
+            iconSize: [32, 32],
+            iconAnchor: [16, 16]
+        });
+        
+        L.marker([{{ proposal.latitude }}, {{ proposal.longitude }}], { icon })
+            .addTo(proposalMap)
+            .bindPopup(`
+                <div class="p-2">
+                    <h4 class="font-semibold text-sm mb-1">{{ proposal.title }}</h4>
+                    <p class="text-xs text-gray-600">{{ proposal.address }}</p>
+                </div>
+            `);
+    }
+    
+    // Vote functionality
+    async function voteProposal(proposalId) {
+        {% if not current_user.is_authenticated %}
+            openLoginModal();
+            return;
+        {% endif %}
+
+        try {
+            const response = await fetch(`/votar/${proposalId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Update vote count
+                document.getElementById('votesCount').textContent = data.votes_count;
+                
+                // Update button
+                const voteButton = document.getElementById('voteButton');
+                const voteText = document.getElementById('voteText');
+                
+                if (data.voted) {
+                    voteText.textContent = 'Desvotar';
+                    voteButton.className = 'px-4 py-2 rounded-md transition-colors bg-green-600 hover:bg-green-700 text-white';
+                } else {
+                    voteText.textContent = 'Votar';
+                    voteButton.className = 'px-4 py-2 rounded-md transition-colors bg-blue-600 hover:bg-blue-700 text-white';
+                }
+                
+                userVoted = data.voted;
+                showNotification(data.voted ? 'Voto adicionado!' : 'Voto removido!');
+            } else {
+                showNotification(data.message, 'error');
+            }
+        } catch (error) {
+            showNotification('Erro ao votar', 'error');
+        }
+    }
+    
+    // Comment functionality
+    document.getElementById('commentForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const content = document.getElementById('commentContent').value.trim();
+        if (!content) return;
+        
+        try {
+            const response = await fetch(`/comentar/{{ proposal.id }}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ content })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Add comment to list
+                addCommentToDOM(data.comment);
+                
+                // Update comment count
+                const newCount = {{ proposal.comments_count }} + 1;
+                document.getElementById('commentsCount').textContent = newCount;
+                document.getElementById('commentsCountHeader').textContent = newCount;
+                
+                // Clear form
+                document.getElementById('commentContent').value = '';
+                
+                showNotification('Comentário adicionado!');
+            } else {
+                showNotification(data.message, 'error');
+            }
+        } catch (error) {
+            showNotification('Erro ao comentar', 'error');
+        }
+    });
+    
+    // Add comment to DOM
+    function addCommentToDOM(comment) {
+        const commentsList = document.getElementById('commentsList');
+        
+        // Remove empty state if exists
+        const emptyState = commentsList.querySelector('.text-center');
+        if (emptyState) {
+            emptyState.remove();
+        }
+        
+        const commentElement = document.createElement('div');
+        commentElement.className = 'border-b border-gray-100 pb-4 last:border-b-0';
+        commentElement.innerHTML = `
+            <div class="flex items-start space-x-3">
+                <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span class="text-white text-sm font-medium">${comment.author_name[0].toUpperCase()}</span>
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-center space-x-2 mb-1">
+                        <span class="font-medium text-gray-900">${comment.author_name}</span>
+                        <span class="text-sm text-gray-500">${new Date(comment.created_at).toLocaleDateString('pt-BR')} às ${new Date(comment.created_at).toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'})}</span>
+                    </div>
+                    <p class="text-gray-700">${comment.content}</p>
+                </div>
+            </div>
+        `;
+        
+        commentsList.insertBefore(commentElement, commentsList.firstChild);
+    }
+    
+    // Share functionality
+    function shareProposal() {
+        if (navigator.share) {
+            navigator.share({
+                title: '{{ proposal.title }}',
+                text: '{{ proposal.description[:100] }}...',
+                url: window.location.href
+            });
+        } else {
+            // Fallback: copy to clipboard
+            navigator.clipboard.writeText(window.location.href).then(() => {
+                showNotification('Link copiado para a área de transferência!');
+            });
+        }
+    }
+    
+    // Initialize map when page loads
+    document.addEventListener('DOMContentLoaded', initProposalMap);
+</script>
+
+<style>
+    .custom-marker {
+        background: transparent !important;
+        border: none !important;
+    }
+</style>
+{% endblock %}

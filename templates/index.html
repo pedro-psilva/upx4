@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block title %}Propostas - Meu Bairro Melhor{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Propostas da Comunidade</h1>
+            <p class="text-gray-600">
+                {{ proposals.total }} {{ 'proposta encontrada' if proposals.total == 1 else 'propostas encontradas' }}
+            </p>
+        </div>
+        
+        <div class="flex items-center space-x-4">
+            <!-- Search -->
+            <div class="relative">
+                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <input type="text" id="searchInput" placeholder="Buscar propostas..." 
+                       value="{{ request.args.get('search', '') }}"
+                       class="pl-9 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500">
+            </div>
+            
+            <!-- View Mode Toggle -->
+            <div class="flex items-center space-x-1 bg-gray-100 rounded-md p-1">
+                <button id="gridView" class="p-2 rounded bg-white shadow-sm">
+                    <i class="fas fa-th"></i>
+                </button>
+                <button id="listView" class="p-2 rounded text-gray-600">
+                    <i class="fas fa-list"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Proposals Grid/List -->
+    {% if proposals.items %}
+        <div id="proposalsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for proposal in proposals.items %}
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 card-hover">
+                <!-- Header -->
+                <div class="p-4 border-b border-gray-100">
+                    <div class="flex items-start justify-between mb-2">
+                        <h3 class="text-lg font-semibold text-gray-900 line-clamp-2">{{ proposal.title }}</h3>
+                        <span class="status-{{ proposal.status }} px-2 py-1 text-xs font-medium rounded-full">
+                            {% if proposal.status == 'pending' %}Pendente
+                            {% elif proposal.status == 'approved' %}Aprovado
+                            {% elif proposal.status == 'in_progress' %}Em Andamento
+                            {% elif proposal.status == 'completed' %}Concluído
+                            {% elif proposal.status == 'rejected' %}Rejeitado
+                            {% endif %}
+                        </span>
+                    </div>
+                    
+                    <div class="flex items-center space-x-2 text-sm text-gray-500">
+                        <i class="fas fa-{{ proposal.category_obj.icon }}" style="color: {{ proposal.category_obj.color }}"></i>
+                        <span>{{ proposal.category_obj.name }}</span>
+                        <span>•</span>
+                        <span class="priority-{{ proposal.priority }} px-2 py-1 text-xs rounded-full">
+                            {% if proposal.priority == 'low' %}Baixa
+                            {% elif proposal.priority == 'medium' %}Média
+                            {% elif proposal.priority == 'high' %}Alta
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Content -->
+                <div class="p-4">
+                    <p class="text-gray-600 text-sm mb-4 line-clamp-3">{{ proposal.description }}</p>
+                    
+                    <div class="flex items-center text-sm text-gray-500 mb-4">
+                        <i class="fas fa-map-marker-alt mr-1"></i>
+                        <span class="truncate">{{ proposal.address }}</span>
+                    </div>
+                    
+                    <!-- Stats -->
+                    <div class="flex items-center justify-between text-sm text-gray-500 mb-4">
+                        <div class="flex items-center space-x-4">
+                            <span><i class="fas fa-thumbs-up mr-1"></i>{{ proposal.votes_count }} votos</span>
+                            <span><i class="fas fa-comments mr-1"></i>{{ proposal.comments_count }} comentários</span>
+                        </div>
+                        <span>{{ proposal.created_at.strftime('%d/%m/%Y') }}</span>
+                    </div>
+                    
+                    <!-- Actions -->
+                    <div class="flex items-center space-x-2">
+                        <button onclick="voteProposal({{ proposal.id }})" 
+                                class="flex-1 bg-blue-600 text-white py-2 px-3 rounded-md hover:bg-blue-700 transition-colors text-sm">
+                            <i class="fas fa-thumbs-up mr-1"></i>Votar
+                        </button>
+                        <button onclick="commentProposal({{ proposal.id }})" 
+                                class="flex-1 bg-gray-100 text-gray-700 py-2 px-3 rounded-md hover:bg-gray-200 transition-colors text-sm">
+                            <i class="fas fa-comment mr-1"></i>Comentar
+                        </button>
+                        <a href="{{ url_for('proposta_detalhes', id=proposal.id) }}" 
+                           class="bg-gray-100 text-gray-700 py-2 px-3 rounded-md hover:bg-gray-200 transition-colors text-sm">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Footer -->
+                <div class="px-4 py-3 bg-gray-50 border-t border-gray-100">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-6 h-6 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center">
+                                <span class="text-white text-xs font-medium">{{ proposal.author.name[0].upper() }}</span>
+                            </div>
+                            <span class="text-sm text-gray-600">{{ proposal.author.name }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if proposals.pages > 1 %}
+        <div class="flex items-center justify-center space-x-2 mt-8">
+            {% if proposals.has_prev %}
+                <a href="{{ url_for('index', page=proposals.prev_num, category=request.args.get('category', 'all'), status=request.args.get('status', 'all'), search=request.args.get('search', '')) }}" 
+                   class="px-3 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+            {% endif %}
+            
+            {% for page_num in proposals.iter_pages() %}
+                {% if page_num %}
+                    {% if page_num != proposals.page %}
+                        <a href="{{ url_for('index', page=page_num, category=request.args.get('category', 'all'), status=request.args.get('status', 'all'), search=request.args.get('search', '')) }}" 
+                           class="px-3 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                            {{ page_num }}
+                        </a>
+                    {% else %}
+                        <span class="px-3 py-2 bg-blue-600 text-white border border-blue-600 rounded-md">
+                            {{ page_num }}
+                        </span>
+                    {% endif %}
+                {% else %}
+                    <span class="px-3 py-2 text-gray-500">...</span>
+                {% endif %}
+            {% endfor %}
+            
+            {% if proposals.has_next %}
+                <a href="{{ url_for('index', page=proposals.next_num, category=request.args.get('category', 'all'), status=request.args.get('status', 'all'), search=request.args.get('search', '')) }}" 
+                   class="px-3 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    {% else %}
+        <!-- Empty State -->
+        <div class="text-center py-12">
+            <div class="text-gray-400 mb-4">
+                <i class="fas fa-search text-6xl"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Nenhuma proposta encontrada</h3>
+            <p class="text-gray-600 mb-4">Tente ajustar os filtros ou criar uma nova proposta.</p>
+            {% if current_user.is_authenticated %}
+                <a href="{{ url_for('criar_proposta') }}" 
+                   class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                    <i class="fas fa-plus mr-2"></i>Criar Nova Proposta
+                </a>
+            {% else %}
+                <button onclick="openLoginModal()" 
+                        class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                    <i class="fas fa-sign-in-alt mr-2"></i>Fazer Login para Criar Proposta
+                </button>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Search functionality
+    document.getElementById('searchInput').addEventListener('input', function() {
+        const searchTerm = this.value;
+        const currentUrl = new URL(window.location);
+        currentUrl.searchParams.set('search', searchTerm);
+        currentUrl.searchParams.set('page', '1'); // Reset to first page
+        window.location.href = currentUrl.toString();
+    });
+
+    // View mode toggle
+    document.getElementById('gridView').addEventListener('click', function() {
+        const container = document.getElementById('proposalsContainer');
+        container.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
+        this.classList.add('bg-white', 'shadow-sm');
+        this.classList.remove('text-gray-600');
+        document.getElementById('listView').classList.remove('bg-white', 'shadow-sm');
+        document.getElementById('listView').classList.add('text-gray-600');
+    });
+
+    document.getElementById('listView').addEventListener('click', function() {
+        const container = document.getElementById('proposalsContainer');
+        container.className = 'space-y-4';
+        this.classList.add('bg-white', 'shadow-sm');
+        this.classList.remove('text-gray-600');
+        document.getElementById('gridView').classList.remove('bg-white', 'shadow-sm');
+        document.getElementById('gridView').classList.add('text-gray-600');
+    });
+
+    // Vote functionality
+    function voteProposal(proposalId) {
+        {% if not current_user.is_authenticated %}
+            openLoginModal();
+            return;
+        {% endif %}
+        
+        // Redirect to proposal details page
+        window.location.href = `/proposta/${proposalId}#votes`;
+    }
+
+    // Comment functionality
+    function commentProposal(proposalId) {
+        {% if not current_user.is_authenticated %}
+            openLoginModal();
+            return;
+        {% endif %}
+        
+        // Redirect to proposal details page
+        window.location.href = `/proposta/${proposalId}#comments`;
+    }
+</script>
+{% endblock %}

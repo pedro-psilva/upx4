@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Meu Bairro Melhor{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
+            <p class="text-gray-600">Relatórios e estatísticas das propostas</p>
+        </div>
+        
+        <div class="flex items-center space-x-4">
+            <button onclick="exportReport()" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
+                <i class="fas fa-download mr-2"></i>Exportar Relatório
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center">
+                <div class="p-3 bg-blue-100 rounded-lg">
+                    <i class="fas fa-list text-blue-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Total de Propostas</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ total_proposals }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center">
+                <div class="p-3 bg-green-100 rounded-lg">
+                    <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Aprovadas</p>
+                    <p class="text-2xl font-bold text-gray-900">
+                        {{ proposals_by_status.get('approved', 0) }}
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center">
+                <div class="p-3 bg-yellow-100 rounded-lg">
+                    <i class="fas fa-clock text-yellow-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Pendentes</p>
+                    <p class="text-2xl font-bold text-gray-900">
+                        {{ proposals_by_status.get('pending', 0) }}
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center">
+                <div class="p-3 bg-purple-100 rounded-lg">
+                    <i class="fas fa-play text-purple-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Em Andamento</p>
+                    <p class="text-2xl font-bold text-gray-900">
+                        {{ proposals_by_status.get('in_progress', 0) }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Status Chart -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Propostas por Status</h3>
+            <div class="h-64">
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Category Chart -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Propostas por Categoria</h3>
+            <div class="h-64">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Proposals -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-900">Propostas Recentes</h3>
+            <a href="{{ url_for('index') }}" class="text-blue-600 hover:text-blue-800 text-sm">
+                Ver todas <i class="fas fa-arrow-right ml-1"></i>
+            </a>
+        </div>
+        
+        <div class="space-y-4">
+            {% for proposal in recent_proposals %}
+            <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                <div class="flex-1">
+                    <h4 class="font-medium text-gray-900">{{ proposal.title }}</h4>
+                    <div class="flex items-center space-x-4 text-sm text-gray-500 mt-1">
+                        <span class="status-{{ proposal.status }} px-2 py-1 text-xs rounded-full">
+                            {% if proposal.status == 'pending' %}Pendente
+                            {% elif proposal.status == 'approved' %}Aprovado
+                            {% elif proposal.status == 'in_progress' %}Em Andamento
+                            {% elif proposal.status == 'completed' %}Concluído
+                            {% elif proposal.status == 'rejected' %}Rejeitado
+                            {% endif %}
+                        </span>
+                        <span><i class="fas fa-thumbs-up mr-1"></i>{{ proposal.votes_count }} votos</span>
+                        <span>{{ proposal.created_at.strftime('%d/%m/%Y') }}</span>
+                    </div>
+                </div>
+                <a href="{{ url_for('proposta_detalhes', id=proposal.id) }}" 
+                   class="text-blue-600 hover:text-blue-800">
+                    <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Detailed Statistics -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Status Breakdown -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Distribuição por Status</h3>
+            <div class="space-y-3">
+                {% for status, count in proposals_by_status.items() %}
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-3 h-3 rounded-full status-{{ status }}"></div>
+                        <span class="text-sm text-gray-600">
+                            {% if status == 'pending' %}Pendente
+                            {% elif status == 'approved' %}Aprovado
+                            {% elif status == 'in_progress' %}Em Andamento
+                            {% elif status == 'completed' %}Concluído
+                            {% elif status == 'rejected' %}Rejeitado
+                            {% else %}{{ status }}
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm font-medium text-gray-900">{{ count }}</span>
+                        <div class="w-16 bg-gray-200 rounded-full h-2">
+                            <div class="bg-blue-600 h-2 rounded-full" 
+                                 style="width: {{ (count / total_proposals * 100) if total_proposals > 0 else 0 }}%"></div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Category Breakdown -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Distribuição por Categoria</h3>
+            <div class="space-y-3">
+                {% for category, count in proposals_by_category.items() %}
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-3 h-3 rounded-full bg-blue-500"></div>
+                        <span class="text-sm text-gray-600">{{ category }}</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm font-medium text-gray-900">{{ count }}</span>
+                        <div class="w-16 bg-gray-200 rounded-full h-2">
+                            <div class="bg-green-600 h-2 rounded-full" 
+                                 style="width: {{ (count / total_proposals * 100) if total_proposals > 0 else 0 }}%"></div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Status Chart
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    const statusData = {
+        labels: [
+            'Pendente',
+            'Aprovado', 
+            'Em Andamento',
+            'Concluído',
+            'Rejeitado'
+        ],
+        datasets: [{
+            data: [
+                {{ proposals_by_status.get('pending', 0) }},
+                {{ proposals_by_status.get('approved', 0) }},
+                {{ proposals_by_status.get('in_progress', 0) }},
+                {{ proposals_by_status.get('completed', 0) }},
+                {{ proposals_by_status.get('rejected', 0) }}
+            ],
+            backgroundColor: [
+                '#F59E0B',
+                '#10B981',
+                '#3B82F6',
+                '#6B7280',
+                '#EF4444'
+            ],
+            borderWidth: 0
+        }]
+    };
+    
+    new Chart(statusCtx, {
+        type: 'doughnut',
+        data: statusData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true
+                    }
+                }
+            }
+        }
+    });
+    
+    // Category Chart
+    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+    const categoryData = {
+        labels: {{ proposals_by_category.keys() | list | tojson }},
+        datasets: [{
+            data: {{ proposals_by_category.values() | list | tojson }},
+            backgroundColor: [
+                '#3B82F6',
+                '#10B981',
+                '#F59E0B',
+                '#EF4444',
+                '#8B5CF6',
+                '#06B6D4',
+                '#64748B',
+                '#6B7280'
+            ],
+            borderWidth: 0
+        }]
+    };
+    
+    new Chart(categoryCtx, {
+        type: 'doughnut',
+        data: categoryData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true
+                    }
+                }
+            }
+        }
+    });
+    
+    // Export report function
+    function exportReport() {
+        // Create a simple text report
+        const report = `
+RELATÓRIO DE PROPOSTAS - MEU BAIRRO MELHOR
+==========================================
+
+ESTATÍSTICAS GERAIS:
+- Total de Propostas: {{ total_proposals }}
+
+DISTRIBUIÇÃO POR STATUS:
+{% for status, count in proposals_by_status.items() %}
+- {% if status == 'pending' %}Pendente{% elif status == 'approved' %}Aprovado{% elif status == 'in_progress' %}Em Andamento{% elif status == 'completed' %}Concluído{% elif status == 'rejected' %}Rejeitado{% else %}{{ status }}{% endif %}: {{ count }}
+{% endfor %}
+
+DISTRIBUIÇÃO POR CATEGORIA:
+{% for category, count in proposals_by_category.items() %}
+- {{ category }}: {{ count }}
+{% endfor %}
+
+PROPOSTAS RECENTES:
+{% for proposal in recent_proposals %}
+- {{ proposal.title }} ({{ proposal.status }}) - {{ proposal.votes_count }} votos - {{ proposal.created_at.strftime('%d/%m/%Y') }}
+{% endfor %}
+
+Relatório gerado em: ${new Date().toLocaleDateString('pt-BR')}
+        `;
+        
+        // Create and download file
+        const blob = new Blob([report], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `relatorio_propostas_${new Date().toISOString().split('T')[0]}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        showNotification('Relatório exportado com sucesso!');
+    }
+</script>
+{% endblock %}

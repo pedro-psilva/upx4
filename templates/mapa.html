@@ -1,0 +1,400 @@
+{% extends "base.html" %}
+
+{% block title %}Mapa - Meu Bairro Melhor{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Mapa das Propostas</h1>
+            <p class="text-gray-600">Visualize as propostas no mapa do bairro</p>
+        </div>
+        
+        <div class="flex items-center space-x-4">
+            <!-- Search -->
+            <div class="relative">
+                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                <input type="text" id="mapSearch" placeholder="Buscar propostas..." 
+                       class="pl-9 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500">
+            </div>
+            
+            <!-- Filter Toggle -->
+            <button id="filterToggle" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors">
+                <i class="fas fa-filter mr-2"></i>Filtros
+            </button>
+        </div>
+    </div>
+
+    <!-- Filter Panel -->
+    <div id="filterPanel" class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hidden">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Category Filter -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Categoria</label>
+                <select id="categoryFilter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="all">Todas as categorias</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}">{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <!-- Status Filter -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                <select id="statusFilter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="all">Todos os status</option>
+                    <option value="pending">Pendente</option>
+                    <option value="approved">Aprovado</option>
+                    <option value="in_progress">Em Andamento</option>
+                    <option value="completed">Concluído</option>
+                    <option value="rejected">Rejeitado</option>
+                </select>
+            </div>
+            
+            <!-- Priority Filter -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Prioridade</label>
+                <select id="priorityFilter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="all">Todas as prioridades</option>
+                    <option value="high">Alta</option>
+                    <option value="medium">Média</option>
+                    <option value="low">Baixa</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="mt-4 flex justify-end space-x-2">
+            <button id="clearFilters" class="px-4 py-2 text-gray-600 hover:text-gray-800">
+                Limpar Filtros
+            </button>
+            <button id="applyFilters" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                Aplicar Filtros
+            </button>
+        </div>
+    </div>
+
+    <!-- Map Container -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div id="map" style="height: 500px;"></div>
+    </div>
+
+    <!-- Selected Proposal Info -->
+    <div id="selectedProposal" class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hidden">
+        <div class="flex items-start justify-between mb-4">
+            <h3 id="selectedTitle" class="text-lg font-semibold text-gray-900"></h3>
+            <button id="closeSelected" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div id="selectedContent" class="space-y-4">
+            <!-- Content will be populated by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <h3 class="text-sm font-medium text-gray-900 mb-3">Legenda</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {% for category in categories %}
+            <div class="flex items-center space-x-2">
+                <div class="w-4 h-4 rounded-full" style="background-color: {{ category.color }}"></div>
+                <span class="text-sm text-gray-600">{{ category.name }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let map;
+    let markers = [];
+    let selectedProposal = null;
+    
+    // Initialize map
+    function initMap() {
+        // Center on Belo Horizonte, MG
+        map = L.map('map').setView([-19.9167, -43.9345], 12);
+        
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+        
+        // Load proposals
+        loadProposals();
+    }
+    
+    // Load proposals from API
+    async function loadProposals() {
+        try {
+            const response = await fetch('/api/proposals');
+            const data = await response.json();
+            
+            // Clear existing markers
+            markers.forEach(marker => map.removeLayer(marker));
+            markers = [];
+            
+            // Add markers for each proposal
+            data.proposals.forEach(proposal => {
+                addProposalMarker(proposal);
+            });
+        } catch (error) {
+            console.error('Error loading proposals:', error);
+        }
+    }
+    
+    // Add proposal marker to map
+    function addProposalMarker(proposal) {
+        // Get category info
+        const category = getCategoryInfo(proposal.category);
+        
+        // Create custom icon
+        const icon = L.divIcon({
+            className: 'custom-marker',
+            html: `
+                <div class="w-6 h-6 rounded-full border-2 border-white shadow-lg flex items-center justify-center" 
+                     style="background-color: ${category.color}">
+                    <i class="fas fa-${category.icon} text-white text-xs"></i>
+                </div>
+            `,
+            iconSize: [24, 24],
+            iconAnchor: [12, 12]
+        });
+        
+        // Create marker
+        const marker = L.marker([proposal.latitude, proposal.longitude], { icon })
+            .addTo(map)
+            .bindPopup(`
+                <div class="p-2">
+                    <h4 class="font-semibold text-sm mb-1">${proposal.title}</h4>
+                    <p class="text-xs text-gray-600 mb-2">${proposal.address}</p>
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="px-2 py-1 rounded-full" style="background-color: ${category.color}20; color: ${category.color}">
+                            ${category.name}
+                        </span>
+                        <span class="text-gray-500">${proposal.votes_count} votos</span>
+                    </div>
+                </div>
+            `);
+        
+        // Add click handler
+        marker.on('click', function() {
+            selectProposal(proposal);
+        });
+        
+        markers.push(marker);
+    }
+    
+    // Get category info
+    function getCategoryInfo(categoryId) {
+        const categories = {{ categories | tojson }};
+        return categories.find(cat => cat.id === categoryId) || {
+            name: 'Outros',
+            icon: 'circle',
+            color: '#6B7280'
+        };
+    }
+    
+    // Select proposal
+    function selectProposal(proposal) {
+        selectedProposal = proposal;
+        
+        // Update selected proposal info
+        document.getElementById('selectedTitle').textContent = proposal.title;
+        
+        const category = getCategoryInfo(proposal.category);
+        const statusText = {
+            'pending': 'Pendente',
+            'approved': 'Aprovado',
+            'in_progress': 'Em Andamento',
+            'completed': 'Concluído',
+            'rejected': 'Rejeitado'
+        }[proposal.status] || proposal.status;
+        
+        const priorityText = {
+            'low': 'Baixa',
+            'medium': 'Média',
+            'high': 'Alta'
+        }[proposal.priority] || proposal.priority;
+        
+        document.getElementById('selectedContent').innerHTML = `
+            <div class="space-y-3">
+                <p class="text-gray-600 text-sm">${proposal.description}</p>
+                
+                <div class="flex items-center space-x-2 text-sm">
+                    <i class="fas fa-${category.icon}" style="color: ${category.color}"></i>
+                    <span>${category.name}</span>
+                    <span>•</span>
+                    <span class="status-${proposal.status} px-2 py-1 text-xs rounded-full">${statusText}</span>
+                    <span>•</span>
+                    <span class="priority-${proposal.priority} px-2 py-1 text-xs rounded-full">${priorityText}</span>
+                </div>
+                
+                <div class="flex items-center text-sm text-gray-500">
+                    <i class="fas fa-map-marker-alt mr-1"></i>
+                    <span>${proposal.address}</span>
+                </div>
+                
+                <div class="flex items-center justify-between text-sm text-gray-500">
+                    <div class="flex items-center space-x-4">
+                        <span><i class="fas fa-thumbs-up mr-1"></i>${proposal.votes_count} votos</span>
+                        <span><i class="fas fa-comments mr-1"></i>${proposal.comments_count} comentários</span>
+                    </div>
+                    <span>${new Date(proposal.created_at).toLocaleDateString('pt-BR')}</span>
+                </div>
+                
+                <div class="flex items-center space-x-2 pt-2">
+                    <button onclick="voteProposal(${proposal.id})" 
+                            class="flex-1 bg-blue-600 text-white py-2 px-3 rounded-md hover:bg-blue-700 transition-colors text-sm">
+                        <i class="fas fa-thumbs-up mr-1"></i>Votar
+                    </button>
+                    <button onclick="commentProposal(${proposal.id})" 
+                            class="flex-1 bg-gray-100 text-gray-700 py-2 px-3 rounded-md hover:bg-gray-200 transition-colors text-sm">
+                        <i class="fas fa-comment mr-1"></i>Comentar
+                    </button>
+                    <a href="/proposta/${proposal.id}" 
+                       class="bg-gray-100 text-gray-700 py-2 px-3 rounded-md hover:bg-gray-200 transition-colors text-sm">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                </div>
+            </div>
+        `;
+        
+        // Show selected proposal panel
+        document.getElementById('selectedProposal').classList.remove('hidden');
+    }
+    
+    // Filter functionality
+    document.getElementById('filterToggle').addEventListener('click', function() {
+        const panel = document.getElementById('filterPanel');
+        panel.classList.toggle('hidden');
+    });
+    
+    document.getElementById('applyFilters').addEventListener('click', function() {
+        const category = document.getElementById('categoryFilter').value;
+        const status = document.getElementById('statusFilter').value;
+        const priority = document.getElementById('priorityFilter').value;
+        
+        // Filter markers
+        markers.forEach(marker => {
+            const proposal = marker.proposal;
+            let show = true;
+            
+            if (category !== 'all' && proposal.category !== category) show = false;
+            if (status !== 'all' && proposal.status !== status) show = false;
+            if (priority !== 'all' && proposal.priority !== priority) show = false;
+            
+            if (show) {
+                map.addLayer(marker);
+            } else {
+                map.removeLayer(marker);
+            }
+        });
+        
+        // Hide filter panel
+        document.getElementById('filterPanel').classList.add('hidden');
+    });
+    
+    document.getElementById('clearFilters').addEventListener('click', function() {
+        document.getElementById('categoryFilter').value = 'all';
+        document.getElementById('statusFilter').value = 'all';
+        document.getElementById('priorityFilter').value = 'all';
+        
+        // Show all markers
+        markers.forEach(marker => map.addLayer(marker));
+    });
+    
+    // Close selected proposal
+    document.getElementById('closeSelected').addEventListener('click', function() {
+        document.getElementById('selectedProposal').classList.add('hidden');
+        selectedProposal = null;
+    });
+    
+    // Search functionality
+    document.getElementById('mapSearch').addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        
+        markers.forEach(marker => {
+            const proposal = marker.proposal;
+            const matches = proposal.title.toLowerCase().includes(searchTerm) ||
+                          proposal.description.toLowerCase().includes(searchTerm) ||
+                          proposal.address.toLowerCase().includes(searchTerm);
+            
+            if (matches) {
+                map.addLayer(marker);
+            } else {
+                map.removeLayer(marker);
+            }
+        });
+    });
+    
+    // Vote and comment functions (reuse from index.html)
+    async function voteProposal(proposalId) {
+        {% if not current_user.is_authenticated %}
+            openLoginModal();
+            return;
+        {% endif %}
+
+        try {
+            const response = await fetch(`/votar/${proposalId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Update selected proposal if it's the same
+                if (selectedProposal && selectedProposal.id === proposalId) {
+                    selectedProposal.votes_count = data.votes_count;
+                    // Refresh the selected proposal display
+                    selectProposal(selectedProposal);
+                }
+                
+                showNotification(data.voted ? 'Voto adicionado!' : 'Voto removido!');
+            } else {
+                showNotification(data.message, 'error');
+            }
+        } catch (error) {
+            showNotification('Erro ao votar', 'error');
+        }
+    }
+    
+    function commentProposal(proposalId) {
+        {% if not current_user.is_authenticated %}
+            openLoginModal();
+            return;
+        {% endif %}
+        
+        window.location.href = `/proposta/${proposalId}#comments`;
+    }
+    
+    // Store proposal data in markers for filtering
+    function addProposalMarker(proposal) {
+        // ... existing code ...
+        marker.proposal = proposal; // Store proposal data
+        // ... rest of existing code ...
+    }
+    
+    // Initialize map when page loads
+    document.addEventListener('DOMContentLoaded', initMap);
+</script>
+
+<style>
+    .custom-marker {
+        background: transparent !important;
+        border: none !important;
+    }
+    
+    .leaflet-popup-content {
+        margin: 0 !important;
+    }
+</style>
+{% endblock %}
