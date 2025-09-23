@@ -1,0 +1,272 @@
+/* Custom styles for Meu Bairro Melhor */
+
+/* Global Styles */
+* {
+    font-family: 'Poppins', sans-serif;
+}
+
+/* Arredondar apenas imagens específicas (ícones, logos, favicons) */
+/* NÃO aplicar a todas as imagens para evitar problemas com o mapa */
+
+/* Específico para logo */
+.logo img {
+    border-radius: 50% !important;
+}
+
+/* Específico para favicon */
+.favicon {
+    border-radius: 50% !important;
+}
+
+/* Garantir que apenas imagens específicas sejam redondas */
+img[src*="logo"], 
+img[src*="icon"], 
+img[src*="favicon"] {
+    border-radius: 50% !important;
+}
+
+/* Específico para logo-upx4.png */
+img[src*="logo-upx4.png"] {
+    border-radius: 50% !important;
+}
+
+/* Específico para favicon */
+img[src*="favicon"] {
+    border-radius: 50% !important;
+}
+
+/* Classe específica para logo */
+.logo-image {
+    border-radius: 50% !important;
+}
+
+/* Evitar que o mapa seja afetado */
+#map img,
+.leaflet-container img,
+.leaflet-tile,
+.leaflet-tile-container img,
+.leaflet-tile-pane img {
+    border-radius: 0 !important;
+}
+
+/* Garantir que tiles do mapa não sejam arredondados */
+.leaflet-tile {
+    border-radius: 0 !important;
+}
+
+/* Evitar que qualquer elemento do Leaflet seja arredondado */
+.leaflet-container * {
+    border-radius: 0 !important;
+}
+
+/* Gradient Backgrounds */
+.gradient-bg {
+    background: linear-gradient(135deg, #f0fdf4 0%, #ffffff 50%, #eff6ff 100%);
+}
+
+.hero-gradient {
+    background: linear-gradient(135deg, #22c55e 0%, #3b82f6 100%);
+}
+
+/* Card Hover Effects */
+.card-hover {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+/* Status Badges */
+.status-pending { @apply bg-yellow-100 text-yellow-800 border border-yellow-200; }
+.status-approved { @apply bg-sustainability-100 text-sustainability-800 border border-sustainability-200; }
+.status-in_progress { @apply bg-citizenship-100 text-citizenship-800 border border-citizenship-200; }
+.status-completed { @apply bg-neutral-100 text-neutral-800 border border-neutral-200; }
+.status-rejected { @apply bg-red-100 text-red-800 border border-red-200; }
+
+/* Priority Badges */
+.priority-low { @apply bg-sustainability-100 text-sustainability-800 border border-sustainability-200; }
+.priority-medium { @apply bg-yellow-100 text-yellow-800 border border-yellow-200; }
+.priority-high { @apply bg-red-100 text-red-800 border border-red-200; }
+
+/* Category Colors */
+.category-arborizacao { @apply bg-sustainability-50 border-sustainability-200 text-sustainability-800; }
+.category-iluminacao { @apply bg-yellow-50 border-yellow-200 text-yellow-800; }
+.category-acessibilidade { @apply bg-citizenship-50 border-citizenship-200 text-citizenship-800; }
+.category-seguranca { @apply bg-red-50 border-red-200 text-red-800; }
+.category-transporte { @apply bg-blue-50 border-blue-200 text-blue-800; }
+.category-lazer { @apply bg-cyan-50 border-cyan-200 text-cyan-800; }
+.category-infraestrutura { @apply bg-neutral-50 border-neutral-200 text-neutral-800; }
+.category-outros { @apply bg-gray-50 border-gray-200 text-gray-800; }
+
+/* Accessibility Mode */
+.accessibility-mode {
+    filter: contrast(1.2) brightness(1.1);
+}
+
+.accessibility-mode button {
+    min-height: 48px;
+    min-width: 48px;
+}
+
+/* Progress Bars */
+.progress-bar {
+    background: linear-gradient(90deg, #22c55e 0%, #3b82f6 100%);
+}
+
+/* Gamification Badges */
+.badge-collaborator {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* Comment Bubbles */
+.comment-bubble {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    position: relative;
+}
+
+.comment-bubble::before {
+    content: '';
+    position: absolute;
+    top: 12px;
+    left: -8px;
+    width: 0;
+    height: 0;
+    border-top: 8px solid transparent;
+    border-bottom: 8px solid transparent;
+    border-right: 8px solid #f8fafc;
+}
+
+/* Smooth Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fadeInUp {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+    .card-hover:hover {
+        transform: none;
+    }
+}
+
+/* Sidebar Responsive Improvements */
+@media (max-width: 1024px) {
+    #sidebar {
+        z-index: 60;
+    }
+    
+    main {
+        margin-left: 0 !important;
+    }
+}
+
+/* Sidebar Scroll Improvements */
+#sidebar .flex-1 {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+#sidebar .flex-1::-webkit-scrollbar {
+    width: 6px;
+}
+
+#sidebar .flex-1::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 3px;
+}
+
+#sidebar .flex-1::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+#sidebar .flex-1::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Map Container Responsive */
+.map-container {
+    height: 400px;
+}
+
+@media (min-width: 768px) {
+    .map-container {
+        height: 500px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .map-container {
+        height: 600px;
+    }
+}
+
+/* Ensure map doesn't overlap with sidebar */
+@media (max-width: 1023px) {
+    #map {
+        position: relative;
+        z-index: 1;
+    }
+}
+
+/* User dropdown z-index fix */
+.group .absolute {
+    z-index: 99999 !important;
+}
+
+/* Ensure user menu stays above all content */
+.relative.group {
+    z-index: 10000;
+}
+
+/* Header z-index */
+header {
+    z-index: 100;
+    position: relative;
+}
+
+/* Sidebar z-index - above header */
+#sidebar {
+    z-index: 200 !important;
+}
+
+/* Banner z-index fix */
+.hero-gradient {
+    z-index: 1;
+    position: relative;
+}
+
+/* Ensure dropdown appears above banner */
+.group:hover .absolute {
+    z-index: 99999 !important;
+}
+
+/* Force dropdown above all content */
+.absolute.right-0 {
+    z-index: 99999 !important;
+}
+
+/* Specific fix for user dropdown */
+.relative.group .absolute {
+    z-index: 99999 !important;
+    position: absolute !important;
+}

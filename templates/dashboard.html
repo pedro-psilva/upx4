@@ -3,16 +3,41 @@
 {% block title %}Dashboard - Meu Bairro Melhor{% endblock %}
 
 {% block content %}
+<!-- Hero Section -->
+<div class="hero-gradient rounded-2xl p-8 mb-8 text-white relative overflow-hidden">
+    <div class="absolute inset-0 bg-black bg-opacity-20"></div>
+    <div class="relative z-10">
+        <div class="max-w-4xl mx-auto text-center">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4 animate-fadeInUp">
+                Relatórios e Estatísticas
+            </h1>
+            <p class="text-xl mb-8 opacity-90 animate-fadeInUp" style="animation-delay: 0.2s;">
+                Acompanhe o progresso das propostas e o engajamento da comunidade
+            </p>
+        </div>
+    </div>
+    <!-- Decorative elements -->
+    <div class="absolute top-4 right-4 text-white opacity-20">
+        <i class="fas fa-chart-pie text-6xl"></i>
+    </div>
+    <div class="absolute bottom-4 left-4 text-white opacity-20">
+        <i class="fas fa-chart-bar text-4xl"></i>
+    </div>
+</div>
+
 <div class="space-y-6">
     <!-- Header -->
     <div class="flex items-center justify-between">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
-            <p class="text-gray-600">Relatórios e estatísticas das propostas</p>
+            <h2 class="text-2xl font-bold text-neutral-900">Dashboard Executivo</h2>
+            <p class="text-neutral-600">Relatórios e estatísticas das propostas</p>
         </div>
         
         <div class="flex items-center space-x-4">
-            <button onclick="exportReport()" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
+            <a href="{{ url_for('index') }}" class="hero-gradient text-white px-4 py-2 rounded-xl hover:shadow-lg transition-all duration-300 text-sm font-semibold">
+                <i class="fas fa-arrow-left mr-2"></i>Voltar às Propostas
+            </a>
+            <button onclick="exportReport()" class="bg-sustainability-600 text-white px-6 py-3 rounded-xl hover:bg-sustainability-700 transition-all duration-300 font-semibold">
                 <i class="fas fa-download mr-2"></i>Exportar Relatório
             </button>
         </div>
@@ -20,14 +45,15 @@
 
     <!-- Stats Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div class="bg-white rounded-2xl shadow-lg border border-neutral-200 p-6 card-hover">
             <div class="flex items-center">
-                <div class="p-3 bg-blue-100 rounded-lg">
-                    <i class="fas fa-list text-blue-600 text-xl"></i>
+                <div class="p-4 bg-citizenship-100 rounded-xl">
+                    <i class="fas fa-lightbulb text-citizenship-600 text-2xl"></i>
                 </div>
                 <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-600">Total de Propostas</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ total_proposals }}</p>
+                    <p class="text-sm font-medium text-neutral-600">Total de Propostas</p>
+                    <p class="text-3xl font-bold text-neutral-900">{{ total_proposals }}</p>
+                    <p class="text-xs text-neutral-500">Ideias da comunidade</p>
                 </div>
             </div>
         </div>

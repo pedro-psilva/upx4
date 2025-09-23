@@ -4,7 +4,7 @@ Meu Bairro Melhor - Aplicação Principal
 Foco na lógica e funcionalidades
 """
 
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, make_response
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -12,6 +12,14 @@ from datetime import datetime
 import os
 import requests
 import json
+from sqlalchemy import func, case
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib import colors
+from reportlab.lib.units import inch
+from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+from io import BytesIO
 
 # Criar aplicação Flask
 app = Flask(__name__)
@@ -33,6 +41,14 @@ class User(UserMixin, db.Model):
     name = db.Column(db.String(100), nullable=False)
     password_hash = db.Column(db.String(128))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Campos adicionais para perfil completo
+    nome_completo = db.Column(db.String(200))
+    cpf = db.Column(db.String(14))
+    telefone = db.Column(db.String(20))
+    endereco = db.Column(db.Text)
+    cep = db.Column(db.String(10))
+    data_nascimento = db.Column(db.Date)
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -371,6 +387,28 @@ def logout():
     logout_user()
     return redirect(url_for('index'))
 
+@app.route('/perfil', methods=['GET', 'POST'])
+@login_required
+def perfil():
+    if request.method == 'POST':
+        # Atualizar dados do usuário
+        current_user.nome_completo = request.form.get('nome_completo')
+        current_user.cpf = request.form.get('cpf')
+        current_user.telefone = request.form.get('telefone')
+        current_user.endereco = request.form.get('endereco')
+        current_user.cep = request.form.get('cep')
+        
+        # Processar data de nascimento
+        data_nascimento = request.form.get('data_nascimento')
+        if data_nascimento:
+            current_user.data_nascimento = datetime.strptime(data_nascimento, '%Y-%m-%d').date()
+        
+        db.session.commit()
+        flash('Perfil atualizado com sucesso!', 'success')
+        return redirect(url_for('perfil'))
+    
+    return render_template('perfil.html')
+
 # ===== PROPOSTAS =====
 
 @app.route('/criar-proposta', methods=['GET', 'POST'])
@@ -620,6 +658,376 @@ def init_database():
             db.drop_all()
             db.create_all()
             print("✅ Banco recriado com sucesso!")
+
+# ===== RELATÓRIOS =====
+
+def obter_dados_relatorio():
+    """Coleta todos os dados necessários para o relatório"""
+    
+    # Estatísticas gerais
+    total_propostas = Proposal.query.count()
+    total_usuarios = User.query.count()
+    total_comentarios = Comment.query.count()
+    total_votos = Vote.query.count()
+    
+    # Propostas por status
+    propostas_aprovadas = Proposal.query.filter_by(status='approved').count()
+    propostas_pendentes = Proposal.query.filter_by(status='pending').count()
+    propostas_em_andamento = Proposal.query.filter_by(status='in_progress').count()
+    
+    taxa_aprovacao = round((propostas_aprovadas / total_propostas * 100), 1) if total_propostas > 0 else 0
+    
+    # Propostas por categoria
+    propostas_por_categoria = db.session.query(
+        Category.name,
+        func.count(Proposal.id).label('total'),
+        func.sum(case((Proposal.status == 'approved', 1), else_=0)).label('aprovadas'),
+        func.sum(case((Proposal.status == 'pending', 1), else_=0)).label('pendentes'),
+        func.sum(case((Proposal.status == 'in_progress', 1), else_=0)).label('em_andamento')
+    ).join(Proposal, Category.id == Proposal.category)\
+     .group_by(Category.id, Category.name).all()
+    
+    # Propostas recentes (últimas 10)
+    propostas_recentes = Proposal.query.order_by(Proposal.created_at.desc()).limit(10).all()
+    
+    # Comentários em destaque (mais recentes)
+    comentarios_destaque = Comment.query.join(User).order_by(
+        Comment.created_at.desc()
+    ).limit(5).all()
+    
+    # Usuários mais ativos
+    usuarios_ativos = db.session.query(
+        User,
+        func.count(Proposal.id).label('total_propostas'),
+        func.count(Comment.id).label('total_comentarios')
+    ).outerjoin(Proposal, User.id == Proposal.author_id)\
+     .outerjoin(Comment, User.id == Comment.user_id)\
+     .group_by(User.id)\
+     .order_by(func.count(Proposal.id).desc())\
+     .limit(10).all()
+    
+    # Propostas mais votadas
+    propostas_mais_votadas = Proposal.query.order_by(Proposal.votes_count.desc()).limit(5).all()
+    
+    # Dados para o cabeçalho
+    data_atual = datetime.now().strftime("%d/%m/%Y")
+    mes_atual = datetime.now().strftime("%B %Y")
+    
+    return {
+        'data_atual': data_atual,
+        'periodo': mes_atual,
+        'total_registros': total_propostas + total_comentarios,
+        'responsavel': 'Sistema Administrativo',
+        'total_propostas': total_propostas,
+        'total_usuarios': total_usuarios,
+        'total_comentarios': total_comentarios,
+        'total_votos': total_votos,
+        'propostas_aprovadas': propostas_aprovadas,
+        'propostas_pendentes': propostas_pendentes,
+        'propostas_em_andamento': propostas_em_andamento,
+        'taxa_aprovacao': f"{taxa_aprovacao}%",
+        'propostas_por_categoria': propostas_por_categoria,
+        'propostas_recentes': propostas_recentes,
+        'comentarios_destaque': comentarios_destaque,
+        'usuarios_ativos': usuarios_ativos,
+        'propostas_mais_votadas': propostas_mais_votadas
+    }
+
+@app.route('/relatorios')
+@login_required
+def relatorios():
+    """Página principal de relatórios"""
+    dados = obter_dados_relatorio()
+    return render_template('relatorios.html', **dados)
+
+@app.route('/relatorios/pdf')
+@login_required
+def relatorio_pdf():
+    """Gerar relatório em PDF usando ReportLab"""
+    dados = obter_dados_relatorio()
+    
+    # Criar buffer para o PDF
+    buffer = BytesIO()
+    
+    # Criar documento PDF
+    doc = SimpleDocTemplate(buffer, pagesize=A4, 
+                          rightMargin=72, leftMargin=72, 
+                          topMargin=72, bottomMargin=18)
+    
+    # Estilos
+    styles = getSampleStyleSheet()
+    
+    # Estilo personalizado para título
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=18,
+        spaceAfter=30,
+        alignment=TA_CENTER,
+        textColor=colors.HexColor('#1f2937')
+    )
+    
+    # Estilo para subtítulos
+    subtitle_style = ParagraphStyle(
+        'CustomSubtitle',
+        parent=styles['Heading2'],
+        fontSize=14,
+        spaceAfter=12,
+        textColor=colors.HexColor('#374151')
+    )
+    
+    # Estilo para parágrafos
+    normal_style = ParagraphStyle(
+        'CustomNormal',
+        parent=styles['Normal'],
+        fontSize=10,
+        spaceAfter=6
+    )
+    
+    # Lista de elementos do PDF
+    story = []
+    
+    # Cabeçalho
+    story.append(Paragraph("Relatório de Engajamento Comunitário", title_style))
+    story.append(Paragraph("Meu Bairro Melhor - Sistema de Participação Cidadã", styles['Normal']))
+    story.append(Paragraph(f"Gerado em: {dados['data_atual']} | Responsável: {dados['responsavel']}", styles['Normal']))
+    story.append(Spacer(1, 20))
+    
+    # Estatísticas Gerais
+    story.append(Paragraph("📊 Estatísticas Gerais", subtitle_style))
+    
+    # Tabela de estatísticas
+    stats_data = [
+        ['Métrica', 'Valor'],
+        ['Total de Propostas', str(dados['total_propostas'])],
+        ['Total de Usuários', str(dados['total_usuarios'])],
+        ['Total de Comentários', str(dados['total_comentarios'])],
+        ['Total de Votos', str(dados['total_votos'])]
+    ]
+    
+    stats_table = Table(stats_data, colWidths=[3*inch, 2*inch])
+    stats_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f8fafc')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#374151')),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    
+    story.append(stats_table)
+    story.append(Spacer(1, 20))
+    
+    # Status das Propostas
+    story.append(Paragraph("📈 Status das Propostas", subtitle_style))
+    
+    status_data = [
+        ['Status', 'Quantidade', 'Percentual'],
+        ['Aprovadas', str(dados['propostas_aprovadas']), dados['taxa_aprovacao']],
+        ['Pendentes', str(dados['propostas_pendentes']), f"{round((dados['propostas_pendentes'] / dados['total_propostas'] * 100) if dados['total_propostas'] > 0 else 0, 1)}%"],
+        ['Em Andamento', str(dados['propostas_em_andamento']), f"{round((dados['propostas_em_andamento'] / dados['total_propostas'] * 100) if dados['total_propostas'] > 0 else 0, 1)}%"]
+    ]
+    
+    status_table = Table(status_data, colWidths=[2*inch, 1.5*inch, 1.5*inch])
+    status_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f8fafc')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#374151')),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    
+    story.append(status_table)
+    story.append(Spacer(1, 20))
+    
+    # Propostas por Categoria
+    story.append(Paragraph("🏷️ Propostas por Categoria", subtitle_style))
+    
+    categoria_data = [['Categoria', 'Total', 'Aprovadas', 'Pendentes', 'Em Andamento']]
+    for categoria in dados['propostas_por_categoria']:
+        categoria_data.append([
+            categoria.name,
+            str(categoria.total),
+            str(categoria.aprovadas),
+            str(categoria.pendentes),
+            str(categoria.em_andamento)
+        ])
+    
+    categoria_table = Table(categoria_data, colWidths=[1.5*inch, 0.8*inch, 0.8*inch, 0.8*inch, 0.8*inch])
+    categoria_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f8fafc')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#374151')),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('FONTSIZE', (0, 1), (-1, -1), 9)
+    ]))
+    
+    story.append(categoria_table)
+    story.append(PageBreak())
+    
+    # Propostas Recentes
+    story.append(Paragraph("🆕 Propostas Recentes", subtitle_style))
+    
+    recentes_data = [['Título', 'Autor', 'Data', 'Status', 'Votos']]
+    for proposta in dados['propostas_recentes']:
+        recentes_data.append([
+            proposta.title[:30] + '...' if len(proposta.title) > 30 else proposta.title,
+            (proposta.author.nome_completo or proposta.author.name)[:20],
+            proposta.created_at.strftime('%d/%m/%Y'),
+            proposta.status.title(),
+            str(proposta.votes_count)
+        ])
+    
+    recentes_table = Table(recentes_data, colWidths=[2*inch, 1.2*inch, 0.8*inch, 0.8*inch, 0.5*inch])
+    recentes_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f8fafc')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#374151')),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('FONTSIZE', (0, 1), (-1, -1), 8)
+    ]))
+    
+    story.append(recentes_table)
+    story.append(Spacer(1, 20))
+    
+    # Propostas Mais Votadas
+    story.append(Paragraph("⭐ Propostas Mais Votadas", subtitle_style))
+    
+    votadas_data = [['Posição', 'Título', 'Votos', 'Comentários', 'Status']]
+    for i, proposta in enumerate(dados['propostas_mais_votadas'], 1):
+        votadas_data.append([
+            f"{i}º",
+            proposta.title[:25] + '...' if len(proposta.title) > 25 else proposta.title,
+            str(proposta.votes_count),
+            str(proposta.comments_count),
+            proposta.status.title()
+        ])
+    
+    votadas_table = Table(votadas_data, colWidths=[0.5*inch, 2*inch, 0.6*inch, 0.8*inch, 0.8*inch])
+    votadas_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f8fafc')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#374151')),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('FONTSIZE', (0, 1), (-1, -1), 8)
+    ]))
+    
+    story.append(votadas_table)
+    story.append(Spacer(1, 20))
+    
+    # Usuários Mais Ativos
+    story.append(Paragraph("🏆 Usuários Mais Ativos", subtitle_style))
+    
+    usuarios_data = [['Posição', 'Nome', 'Email', 'Propostas', 'Comentários']]
+    for i, usuario_data in enumerate(dados['usuarios_ativos'], 1):
+        usuario = usuario_data[0]
+        total_propostas = usuario_data[1]
+        total_comentarios = usuario_data[2]
+        usuarios_data.append([
+            f"{i}º",
+            (usuario.nome_completo or usuario.name)[:20],
+            usuario.email[:25] + '...' if len(usuario.email) > 25 else usuario.email,
+            str(total_propostas),
+            str(total_comentarios)
+        ])
+    
+    usuarios_table = Table(usuarios_data, colWidths=[0.5*inch, 1.5*inch, 1.8*inch, 0.8*inch, 0.8*inch])
+    usuarios_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f8fafc')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#374151')),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('FONTSIZE', (0, 1), (-1, -1), 8)
+    ]))
+    
+    story.append(usuarios_table)
+    
+    # Rodapé
+    story.append(Spacer(1, 30))
+    story.append(Paragraph("Meu Bairro Melhor - Sistema de Participação Cidadã", styles['Normal']))
+    story.append(Paragraph(f"Relatório gerado automaticamente em {dados['data_atual']}", styles['Normal']))
+    story.append(Paragraph("Para mais informações, acesse o sistema ou entre em contato com a administração", styles['Normal']))
+    
+    # Construir PDF
+    doc.build(story)
+    
+    # Obter conteúdo do buffer
+    pdf_content = buffer.getvalue()
+    buffer.close()
+    
+    # Preparar resposta
+    response = make_response(pdf_content)
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'attachment; filename="relatorio_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf"'
+    
+    return response
+
+@app.route('/relatorios/personalizado', methods=['GET', 'POST'])
+@login_required
+def relatorio_personalizado():
+    """Relatório com filtros personalizados"""
+    if request.method == 'POST':
+        # Obter filtros do formulário
+        data_inicio = request.form.get('data_inicio')
+        data_fim = request.form.get('data_fim')
+        categoria = request.form.get('categoria')
+        status = request.form.get('status')
+        
+        # Aplicar filtros na consulta
+        query = Proposal.query
+        
+        if data_inicio:
+            query = query.filter(Proposal.created_at >= data_inicio)
+        if data_fim:
+            query = query.filter(Proposal.created_at <= data_fim)
+        if categoria:
+            query = query.filter(Proposal.category == categoria)
+        if status:
+            query = query.filter(Proposal.status == status)
+        
+        propostas_filtradas = query.all()
+        
+        # Se solicitado PDF
+        if request.form.get('formato') == 'pdf':
+            dados = obter_dados_relatorio()
+            dados['propostas_recentes'] = propostas_filtradas
+            dados['titulo_personalizado'] = f"Relatório Personalizado - {data_inicio} a {data_fim}"
+            
+            # Usar a mesma lógica do relatório PDF principal
+            return relatorio_pdf()
+    
+    # Buscar categorias para o formulário
+    categorias = Category.query.all()
+    return render_template('relatorio_personalizado.html', categorias=categorias)
+
+# Filtro personalizado para formatar datas no template
+@app.template_filter('strftime')
+def strftime_filter(date, format='%d/%m/%Y'):
+    """Filtro para formatar datas"""
+    if date:
+        return date.strftime(format)
+    return ''
 
 if __name__ == '__main__':
     print("🚀 Iniciando Meu Bairro Melhor...")

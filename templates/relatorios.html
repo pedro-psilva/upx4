@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}Relatórios - Meu Bairro Melhor{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-gradient rounded-2xl p-8 mb-8 text-white relative overflow-hidden">
+    <div class="absolute inset-0 bg-black bg-opacity-20"></div>
+    <div class="relative z-10">
+        <div class="max-w-4xl mx-auto text-center">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4 animate-fadeInUp">
+                <i class="fas fa-chart-line mr-3"></i>Relatórios
+            </h1>
+            <p class="text-xl mb-8 opacity-90 animate-fadeInUp" style="animation-delay: 0.2s;">
+                Análise completa do engajamento da comunidade
+            </p>
+        </div>
+    </div>
+    <!-- Decorative elements -->
+    <div class="absolute top-4 right-4 text-white opacity-20">
+        <i class="fas fa-chart-bar text-6xl"></i>
+    </div>
+    <div class="absolute bottom-4 left-4 text-white opacity-20">
+        <i class="fas fa-file-pdf text-4xl"></i>
+    </div>
+</div>
+
+<div class="max-w-7xl mx-auto">
+    <!-- Ações Rápidas -->
+    <div class="bg-white rounded-2xl shadow-lg border border-neutral-200 p-8 mb-8">
+        <h2 class="text-2xl font-bold text-neutral-900 mb-6">
+            <i class="fas fa-download mr-3 text-citizenship-500"></i>Ações Rápidas
+        </h2>
+        
+        <div class="grid md:grid-cols-2 gap-6">
+            <a href="{{ url_for('relatorio_pdf') }}" class="hero-gradient text-white px-8 py-4 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold flex items-center justify-center">
+                <i class="fas fa-file-pdf mr-3"></i>Gerar Relatório PDF
+            </a>
+            
+            <a href="{{ url_for('relatorio_personalizado') }}" class="bg-neutral-100 text-neutral-700 px-8 py-4 rounded-xl hover:bg-neutral-200 transition-all duration-300 font-semibold flex items-center justify-center">
+                <i class="fas fa-filter mr-3"></i>Relatório Personalizado
+            </a>
+        </div>
+    </div>
+    
+    <!-- Estatísticas Gerais -->
+    <div class="grid md:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-2xl shadow-lg border border-neutral-200 p-6 text-center">
+            <div class="w-16 h-16 bg-citizenship-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-lightbulb text-white text-2xl"></i>
+            </div>
+            <div class="text-3xl font-bold text-citizenship-700">{{ total_propostas }}</div>
+            <div class="text-sm text-citizenship-600">Propostas</div>
+        </div>
+        
+        <div class="bg-white rounded-2xl shadow-lg border border-neutral-200 p-6 text-center">
+            <div class="w-16 h-16 bg-sustainability-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-users text-white text-2xl"></i>
+            </div>
+            <div class="text-3xl font-bold text-sustainability-700">{{ total_usuarios }}</div>
+            <div class="text-sm text-sustainability-600">Usuários</div>
+        </div>
+        
+        <div class="bg-white rounded-2xl shadow-lg border border-neutral-200 p-6 text-center">
+            <div class="w-16 h-16 bg-neutral-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-comments text-white text-2xl"></i>
+            </div>
+            <div class="text-3xl font-bold text-neutral-700">{{ total_comentarios }}</div>
+            <div class="text-sm text-neutral-600">Comentários</div>
+        </div>
+        
+        <div class="bg-white rounded-2xl shadow-lg border border-neutral-200 p-6 text-center">
+            <div class="w-16 h-16 bg-citizenship-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-thumbs-up text-white text-2xl"></i>
+            </div>
+            <div class="text-3xl font-bold text-citizenship-700">{{ total_votos }}</div>
+            <div class="text-sm text-citizenship-600">Votos</div>
+        </div>
+    </div>
+    
+    <!-- Status das Propostas -->
+    <div class="bg-white rounded-2xl shadow-lg border border-neutral-200 p-8 mb-8">
+        <h2 class="text-2xl font-bold text-neutral-900 mb-6">
+            <i class="fas fa-chart-pie mr-3 text-sustainability-500"></i>Status das Propostas
+        </h2>
+        
+        <div class="grid md:grid-cols-3 gap-6">
+            <div class="text-center p-6 bg-green-50 rounded-xl">
+                <div class="text-2xl font-bold text-green-700">{{ propostas_aprovadas }}</div>
+                <div class="text-sm text-green-600">Aprovadas</div>
+            </div>
+            
+            <div class="text-center p-6 bg-yellow-50 rounded-xl">
+                <div class="text-2xl font-bold text-yellow-700">{{ propostas_pendentes }}</div>
+                <div class="text-sm text-yellow-600">Pendentes</div>
+            </div>
+            
+            <div class="text-center p-6 bg-blue-50 rounded-xl">
+                <div class="text-2xl font-bold text-blue-700">{{ propostas_em_andamento }}</div>
+                <div class="text-sm text-blue-600">Em Andamento</div>
+            </div>
+        </div>
+        
+        <div class="mt-6 text-center">
+            <div class="text-lg font-semibold text-neutral-700">
+                Taxa de Aprovação: <span class="text-citizenship-600">{{ taxa_aprovacao }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Propostas por Categoria -->
+    <div class="bg-white rounded-2xl shadow-lg border border-neutral-200 p-8 mb-8">
+        <h2 class="text-2xl font-bold text-neutral-900 mb-6">
+            <i class="fas fa-tags mr-3 text-neutral-500"></i>Propostas por Categoria
+        </h2>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-neutral-200">
+                        <th class="text-left py-3 px-4 font-semibold text-neutral-700">Categoria</th>
+                        <th class="text-center py-3 px-4 font-semibold text-neutral-700">Total</th>
+                        <th class="text-center py-3 px-4 font-semibold text-neutral-700">Aprovadas</th>
+                        <th class="text-center py-3 px-4 font-semibold text-neutral-700">Pendentes</th>
+                        <th class="text-center py-3 px-4 font-semibold text-neutral-700">Em Andamento</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for categoria in propostas_por_categoria %}
+                    <tr class="border-b border-neutral-100 hover:bg-neutral-50">
+                        <td class="py-3 px-4 font-medium text-neutral-900">{{ categoria.name }}</td>
+                        <td class="py-3 px-4 text-center text-neutral-600">{{ categoria.total }}</td>
+                        <td class="py-3 px-4 text-center text-green-600 font-semibold">{{ categoria.aprovadas }}</td>
+                        <td class="py-3 px-4 text-center text-yellow-600 font-semibold">{{ categoria.pendentes }}</td>
+                        <td class="py-3 px-4 text-center text-blue-600 font-semibold">{{ categoria.em_andamento }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Propostas Mais Votadas -->
+    <div class="bg-white rounded-2xl shadow-lg border border-neutral-200 p-8 mb-8">
+        <h2 class="text-2xl font-bold text-neutral-900 mb-6">
+            <i class="fas fa-star mr-3 text-yellow-500"></i>Propostas Mais Votadas
+        </h2>
+        
+        <div class="space-y-4">
+            {% for proposta in propostas_mais_votadas %}
+            <div class="flex items-center justify-between p-4 bg-neutral-50 rounded-xl">
+                <div class="flex-1">
+                    <h3 class="font-semibold text-neutral-900">{{ proposta.title }}</h3>
+                    <p class="text-sm text-neutral-600">{{ proposta.address }}</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold text-citizenship-600">{{ proposta.votes_count }}</div>
+                    <div class="text-xs text-neutral-500">votos</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Usuários Mais Ativos -->
+    <div class="bg-white rounded-2xl shadow-lg border border-neutral-200 p-8">
+        <h2 class="text-2xl font-bold text-neutral-900 mb-6">
+            <i class="fas fa-trophy mr-3 text-yellow-500"></i>Usuários Mais Ativos
+        </h2>
+        
+        <div class="space-y-4">
+            {% for usuario_data in usuarios_ativos %}
+            {% set usuario = usuario_data[0] %}
+            {% set total_propostas = usuario_data[1] %}
+            {% set total_comentarios = usuario_data[2] %}
+            <div class="flex items-center justify-between p-4 bg-neutral-50 rounded-xl">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-citizenship-500 rounded-full flex items-center justify-center">
+                        <span class="text-white font-semibold">{{ (usuario.nome_completo or usuario.name)[0].upper() }}</span>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-neutral-900">{{ usuario.nome_completo or usuario.name }}</h3>
+                        <p class="text-sm text-neutral-600">{{ usuario.email }}</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-sm text-neutral-600">
+                        <span class="font-semibold">{{ total_propostas }}</span> propostas, 
+                        <span class="font-semibold">{{ total_comentarios }}</span> comentários
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

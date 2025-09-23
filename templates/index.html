@@ -3,12 +3,48 @@
 {% block title %}Propostas - Meu Bairro Melhor{% endblock %}
 
 {% block content %}
+<!-- Hero Banner -->
+<div class="hero-gradient rounded-2xl p-8 mb-8 text-white relative overflow-hidden">
+    <div class="absolute inset-0 bg-black bg-opacity-20"></div>
+    <div class="relative z-10">
+        <div class="max-w-4xl mx-auto text-center">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4 animate-fadeInUp">
+                Construa um bairro melhor junto com seus vizinhos
+            </h1>
+            <p class="text-xl mb-8 opacity-90 animate-fadeInUp" style="animation-delay: 0.2s;">
+                Suas ideias podem transformar nossa comunidade. Participe, vote e colabore!
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center animate-fadeInUp" style="animation-delay: 0.4s;">
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('criar_proposta') }}" class="bg-white text-citizenship-600 px-8 py-4 rounded-xl font-semibold hover:shadow-xl transition-all duration-300 hover:scale-105">
+                        <i class="fas fa-plus mr-2"></i>Fazer uma Sugestão
+                    </a>
+                {% else %}
+                    <button onclick="openRegisterModal()" class="bg-white text-citizenship-600 px-8 py-4 rounded-xl font-semibold hover:shadow-xl transition-all duration-300 hover:scale-105">
+                        <i class="fas fa-user-plus mr-2"></i>Cadastre-se para Participar
+                    </button>
+                {% endif %}
+                <a href="{{ url_for('mapa') }}" class="border-2 border-white text-white px-8 py-4 rounded-xl font-semibold hover:bg-white hover:text-citizenship-600 transition-all duration-300">
+                    <i class="fas fa-map-marked-alt mr-2"></i>Ver no Mapa
+                </a>
+            </div>
+        </div>
+    </div>
+    <!-- Decorative elements -->
+    <div class="absolute top-4 right-4 text-white opacity-20">
+        <i class="fas fa-tree text-6xl"></i>
+    </div>
+    <div class="absolute bottom-4 left-4 text-white opacity-20">
+        <i class="fas fa-lightbulb text-4xl"></i>
+    </div>
+</div>
+
 <div class="space-y-6">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Propostas da Comunidade</h1>
-            <p class="text-gray-600">
+            <h2 class="text-2xl font-bold text-neutral-900">Propostas da Comunidade</h2>
+            <p class="text-neutral-600">
                 {{ proposals.total }} {{ 'proposta encontrada' if proposals.total == 1 else 'propostas encontradas' }}
             </p>
         </div>
@@ -38,12 +74,15 @@
     {% if proposals.items %}
         <div id="proposalsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {% for proposal in proposals.items %}
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 card-hover">
-                <!-- Header -->
-                <div class="p-4 border-b border-gray-100">
-                    <div class="flex items-start justify-between mb-2">
-                        <h3 class="text-lg font-semibold text-gray-900 line-clamp-2">{{ proposal.title }}</h3>
-                        <span class="status-{{ proposal.status }} px-2 py-1 text-xs font-medium rounded-full">
+            <div class="bg-white rounded-2xl shadow-lg border border-neutral-200 card-hover animate-fadeInUp" style="animation-delay: {{ loop.index0 * 0.1 }}s;">
+                <!-- Category Header -->
+                <div class="category-{{ proposal.category }} p-4 rounded-t-2xl">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center space-x-2">
+                            <i class="fas fa-{{ proposal.category_obj.icon }} text-lg"></i>
+                            <span class="font-semibold">{{ proposal.category_obj.name }}</span>
+                        </div>
+                        <span class="status-{{ proposal.status }} px-3 py-1 text-xs font-semibold rounded-full">
                             {% if proposal.status == 'pending' %}Pendente
                             {% elif proposal.status == 'approved' %}Aprovado
                             {% elif proposal.status == 'in_progress' %}Em Andamento
@@ -53,11 +92,10 @@
                         </span>
                     </div>
                     
-                    <div class="flex items-center space-x-2 text-sm text-gray-500">
-                        <i class="fas fa-{{ proposal.category_obj.icon }}" style="color: {{ proposal.category_obj.color }}"></i>
-                        <span>{{ proposal.category_obj.name }}</span>
-                        <span>•</span>
-                        <span class="priority-{{ proposal.priority }} px-2 py-1 text-xs rounded-full">
+                    <h3 class="text-lg font-bold text-neutral-900 line-clamp-2 mb-2">{{ proposal.title }}</h3>
+                    
+                    <div class="flex items-center space-x-2 text-sm">
+                        <span class="priority-{{ proposal.priority }} px-2 py-1 text-xs font-medium rounded-full">
                             {% if proposal.priority == 'low' %}Baixa
                             {% elif proposal.priority == 'medium' %}Média
                             {% elif proposal.priority == 'high' %}Alta
@@ -68,47 +106,70 @@
                 
                 <!-- Content -->
                 <div class="p-4">
-                    <p class="text-gray-600 text-sm mb-4 line-clamp-3">{{ proposal.description }}</p>
+                    <p class="text-neutral-600 text-sm mb-4 line-clamp-3">{{ proposal.description }}</p>
                     
-                    <div class="flex items-center text-sm text-gray-500 mb-4">
-                        <i class="fas fa-map-marker-alt mr-1"></i>
+                    <div class="flex items-center text-sm text-neutral-500 mb-4">
+                        <i class="fas fa-map-marker-alt mr-2 text-neutral-400"></i>
                         <span class="truncate">{{ proposal.address }}</span>
                     </div>
                     
-                    <!-- Stats -->
-                    <div class="flex items-center justify-between text-sm text-gray-500 mb-4">
-                        <div class="flex items-center space-x-4">
-                            <span><i class="fas fa-thumbs-up mr-1"></i>{{ proposal.votes_count }} votos</span>
-                            <span><i class="fas fa-comments mr-1"></i>{{ proposal.comments_count }} comentários</span>
+                    <!-- Progress Bar -->
+                    <div class="mb-4">
+                        <div class="flex items-center justify-between text-xs text-neutral-500 mb-1">
+                            <span>Progresso da proposta</span>
+                            <span>{{ proposal.votes_count }} votos</span>
                         </div>
-                        <span>{{ proposal.created_at.strftime('%d/%m/%Y') }}</span>
+                        <div class="w-full bg-neutral-200 rounded-full h-2">
+                            <div class="progress-bar h-2 rounded-full" style="width: {{ (proposal.votes_count / 50 * 100) | round }}%"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Stats -->
+                    <div class="flex items-center justify-between text-sm text-neutral-500 mb-4">
+                        <div class="flex items-center space-x-4">
+                            <span class="flex items-center">
+                                <i class="fas fa-thumbs-up mr-1 text-sustainability-500"></i>
+                                {{ proposal.votes_count }} votos
+                            </span>
+                            <span class="flex items-center">
+                                <i class="fas fa-comments mr-1 text-citizenship-500"></i>
+                                {{ proposal.comments_count }} comentários
+                            </span>
+                        </div>
+                        <span class="text-xs">{{ proposal.created_at.strftime('%d/%m/%Y') }}</span>
                     </div>
                     
                     <!-- Actions -->
                     <div class="flex items-center space-x-2">
                         <button onclick="voteProposal({{ proposal.id }})" 
-                                class="flex-1 bg-blue-600 text-white py-2 px-3 rounded-md hover:bg-blue-700 transition-colors text-sm">
-                            <i class="fas fa-thumbs-up mr-1"></i>Votar
+                                class="flex-1 hero-gradient text-white py-3 px-4 rounded-xl hover:shadow-lg transition-all duration-300 text-sm font-semibold">
+                            <i class="fas fa-thumbs-up mr-2"></i>Votar
                         </button>
                         <button onclick="commentProposal({{ proposal.id }})" 
-                                class="flex-1 bg-gray-100 text-gray-700 py-2 px-3 rounded-md hover:bg-gray-200 transition-colors text-sm">
-                            <i class="fas fa-comment mr-1"></i>Comentar
+                                class="flex-1 bg-neutral-100 text-neutral-700 py-3 px-4 rounded-xl hover:bg-neutral-200 transition-all duration-300 text-sm font-semibold">
+                            <i class="fas fa-comment mr-2"></i>Comentar
                         </button>
                         <a href="{{ url_for('proposta_detalhes', id=proposal.id) }}" 
-                           class="bg-gray-100 text-gray-700 py-2 px-3 rounded-md hover:bg-gray-200 transition-colors text-sm">
+                           class="bg-neutral-100 text-neutral-700 py-3 px-4 rounded-xl hover:bg-neutral-200 transition-all duration-300 text-sm font-semibold">
                             <i class="fas fa-eye"></i>
                         </a>
                     </div>
                 </div>
                 
                 <!-- Footer -->
-                <div class="px-4 py-3 bg-gray-50 border-t border-gray-100">
+                <div class="px-4 py-3 bg-neutral-50 border-t border-neutral-100 rounded-b-2xl">
                     <div class="flex items-center justify-between">
-                        <div class="flex items-center space-x-2">
-                            <div class="w-6 h-6 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center">
-                                <span class="text-white text-xs font-medium">{{ proposal.author.name[0].upper() }}</span>
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 hero-gradient rounded-full flex items-center justify-center shadow-sm">
+                                <span class="text-white text-sm font-semibold">{{ proposal.author.name[0].upper() }}</span>
                             </div>
-                            <span class="text-sm text-gray-600">{{ proposal.author.name }}</span>
+                            <div>
+                                <span class="text-sm font-medium text-neutral-900">{{ proposal.author.name }}</span>
+                                <div class="text-xs text-neutral-500">Vizinho Colaborador</div>
+                            </div>
+                        </div>
+                        <div class="text-xs text-neutral-400">
+                            {{ proposal.created_at.strftime('%d/%m/%Y') }}
                         </div>
                     </div>
                 </div>
@@ -153,23 +214,29 @@
         {% endif %}
     {% else %}
         <!-- Empty State -->
-        <div class="text-center py-12">
-            <div class="text-gray-400 mb-4">
-                <i class="fas fa-search text-6xl"></i>
+        <div class="text-center py-16">
+            <div class="text-neutral-300 mb-6">
+                <i class="fas fa-lightbulb text-8xl"></i>
             </div>
-            <h3 class="text-lg font-medium text-gray-900 mb-2">Nenhuma proposta encontrada</h3>
-            <p class="text-gray-600 mb-4">Tente ajustar os filtros ou criar uma nova proposta.</p>
-            {% if current_user.is_authenticated %}
-                <a href="{{ url_for('criar_proposta') }}" 
-                   class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
-                    <i class="fas fa-plus mr-2"></i>Criar Nova Proposta
-                </a>
-            {% else %}
-                <button onclick="openLoginModal()" 
-                        class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
-                    <i class="fas fa-sign-in-alt mr-2"></i>Fazer Login para Criar Proposta
+            <h3 class="text-2xl font-bold text-neutral-900 mb-3">Nenhuma proposta encontrada</h3>
+            <p class="text-neutral-600 mb-8 text-lg">Tente ajustar os filtros ou criar uma nova proposta para começar a transformar nosso bairro!</p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('criar_proposta') }}" 
+                       class="hero-gradient text-white px-8 py-4 rounded-xl font-semibold hover:shadow-xl transition-all duration-300 hover:scale-105">
+                        <i class="fas fa-plus mr-2"></i>Criar Nova Proposta
+                    </a>
+                {% else %}
+                    <button onclick="openLoginModal()" 
+                            class="hero-gradient text-white px-8 py-4 rounded-xl font-semibold hover:shadow-xl transition-all duration-300 hover:scale-105">
+                        <i class="fas fa-sign-in-alt mr-2"></i>Fazer Login para Participar
+                    </button>
+                {% endif %}
+                <button onclick="document.getElementById('searchInput').focus()" 
+                        class="border-2 border-neutral-300 text-neutral-700 px-8 py-4 rounded-xl font-semibold hover:bg-neutral-50 transition-all duration-300">
+                    <i class="fas fa-search mr-2"></i>Buscar Propostas
                 </button>
-            {% endif %}
+            </div>
         </div>
     {% endif %}
 </div>

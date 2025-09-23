@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório - Meu Bairro Melhor</title>
+</head>
+<body>
+    <!-- Cabeçalho -->
+    <div class="header">
+        <h1>Relatório de Engajamento Comunitário</h1>
+        <p><strong>Meu Bairro Melhor</strong> - Sistema de Participação Cidadã</p>
+        <p>Gerado em: {{ data_atual }} | Responsável: {{ responsavel }}</p>
+    </div>
+    
+    <!-- Estatísticas Gerais -->
+    <div class="section">
+        <h2>📊 Estatísticas Gerais</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">{{ total_propostas }}</div>
+                <div class="stat-label">Propostas</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ total_usuarios }}</div>
+                <div class="stat-label">Usuários</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ total_comentarios }}</div>
+                <div class="stat-label">Comentários</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ total_votos }}</div>
+                <div class="stat-label">Votos</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Status das Propostas -->
+    <div class="section">
+        <h2>📈 Status das Propostas</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Status</th>
+                    <th>Quantidade</th>
+                    <th>Percentual</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="status-approved">Aprovadas</td>
+                    <td>{{ propostas_aprovadas }}</td>
+                    <td>{{ taxa_aprovacao }}</td>
+                </tr>
+                <tr>
+                    <td class="status-pending">Pendentes</td>
+                    <td>{{ propostas_pendentes }}</td>
+                    <td>{{ ((propostas_pendentes / total_propostas * 100) if total_propostas > 0 else 0)|round(1) }}%</td>
+                </tr>
+                <tr>
+                    <td class="status-in-progress">Em Andamento</td>
+                    <td>{{ propostas_em_andamento }}</td>
+                    <td>{{ ((propostas_em_andamento / total_propostas * 100) if total_propostas > 0 else 0)|round(1) }}%</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Propostas por Categoria -->
+    <div class="section">
+        <h2>🏷️ Propostas por Categoria</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Categoria</th>
+                    <th>Total</th>
+                    <th>Aprovadas</th>
+                    <th>Pendentes</th>
+                    <th>Em Andamento</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for categoria in propostas_por_categoria %}
+                <tr>
+                    <td><strong>{{ categoria.name }}</strong></td>
+                    <td>{{ categoria.total }}</td>
+                    <td class="status-approved">{{ categoria.aprovadas }}</td>
+                    <td class="status-pending">{{ categoria.pendentes }}</td>
+                    <td class="status-in-progress">{{ categoria.em_andamento }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Propostas Recentes -->
+    <div class="section no-break">
+        <h2>🆕 Propostas Recentes</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Título</th>
+                    <th>Autor</th>
+                    <th>Data</th>
+                    <th>Status</th>
+                    <th>Votos</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for proposta in propostas_recentes %}
+                <tr>
+                    <td>{{ proposta.title }}</td>
+                    <td>{{ proposta.author.nome_completo or proposta.author.name }}</td>
+                    <td>{{ proposta.created_at|strftime('%d/%m/%Y') }}</td>
+                    <td class="status-{{ proposta.status.replace('_', '-') }}">{{ proposta.status|title }}</td>
+                    <td>{{ proposta.votes_count }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Propostas Mais Votadas -->
+    <div class="section page-break">
+        <h2>⭐ Propostas Mais Votadas</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Posição</th>
+                    <th>Título</th>
+                    <th>Votos</th>
+                    <th>Comentários</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for proposta in propostas_mais_votadas %}
+                <tr>
+                    <td><strong>{{ loop.index }}º</strong></td>
+                    <td>{{ proposta.title }}</td>
+                    <td><strong>{{ proposta.votes_count }}</strong></td>
+                    <td>{{ proposta.comments_count }}</td>
+                    <td class="status-{{ proposta.status.replace('_', '-') }}">{{ proposta.status|title }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Usuários Mais Ativos -->
+    <div class="section">
+        <h2>🏆 Usuários Mais Ativos</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Posição</th>
+                    <th>Nome</th>
+                    <th>Email</th>
+                    <th>Propostas</th>
+                    <th>Comentários</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for usuario_data in usuarios_ativos %}
+                {% set usuario = usuario_data[0] %}
+                {% set total_propostas = usuario_data[1] %}
+                {% set total_comentarios = usuario_data[2] %}
+                <tr>
+                    <td><strong>{{ loop.index }}º</strong></td>
+                    <td>{{ usuario.nome_completo or usuario.name }}</td>
+                    <td>{{ usuario.email }}</td>
+                    <td><strong>{{ total_propostas }}</strong></td>
+                    <td>{{ total_comentarios }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Comentários em Destaque -->
+    <div class="section">
+        <h2>💬 Comentários em Destaque</h2>
+        <div class="space-y-4">
+            {% for comentario in comentarios_destaque %}
+            <div class="no-break" style="border: 1px solid #e5e7eb; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                <div style="font-weight: bold; color: #374151; margin-bottom: 8px;">
+                    {{ comentario.user.nome_completo or comentario.user.name }}
+                </div>
+                <div style="color: #6b7280; font-size: 10px; margin-bottom: 8px;">
+                    {{ comentario.created_at|strftime('%d/%m/%Y às %H:%M') }}
+                </div>
+                <div style="color: #1f2937;">
+                    "{{ comentario.content }}"
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Rodapé -->
+    <div class="footer">
+        <p><strong>Meu Bairro Melhor</strong> - Sistema de Participação Cidadã</p>
+        <p>Relatório gerado automaticamente em {{ data_atual }}</p>
+        <p>Para mais informações, acesse o sistema ou entre em contato com a administração</p>
+    </div>
+</body>
+</html>

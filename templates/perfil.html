@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block title %}Perfil - Meu Bairro Melhor{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-gradient rounded-2xl p-8 mb-8 text-white relative overflow-hidden">
+    <div class="absolute inset-0 bg-black bg-opacity-20"></div>
+    <div class="relative z-10">
+        <div class="max-w-4xl mx-auto text-center">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4 animate-fadeInUp">
+                <i class="fas fa-user mr-3"></i>Perfil
+            </h1>
+            <p class="text-xl mb-8 opacity-90 animate-fadeInUp" style="animation-delay: 0.2s;">
+                Complete seu perfil e personalize sua experiência
+            </p>
+        </div>
+    </div>
+    <!-- Decorative elements -->
+    <div class="absolute top-4 right-4 text-white opacity-20">
+        <i class="fas fa-user-cog text-6xl"></i>
+    </div>
+    <div class="absolute bottom-4 left-4 text-white opacity-20">
+        <i class="fas fa-shield-alt text-4xl"></i>
+    </div>
+</div>
+
+<div class="max-w-4xl mx-auto">
+    <!-- Profile Completion Card -->
+    <div class="bg-white rounded-2xl shadow-lg border border-neutral-200 p-8 mb-8">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-bold text-neutral-900">
+                <i class="fas fa-user-edit mr-3 text-citizenship-500"></i>Perfil Pessoal
+            </h2>
+            <div class="flex items-center space-x-2">
+                <div class="w-3 h-3 bg-sustainability-500 rounded-full"></div>
+                <span class="text-sm text-neutral-600">Perfil Completo</span>
+            </div>
+        </div>
+        
+        <form method="POST" action="{{ url_for('perfil') }}" class="space-y-6">
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- Nome Completo -->
+                <div>
+                    <label for="nome_completo" class="block text-sm font-medium text-neutral-700 mb-2">
+                        <i class="fas fa-user mr-2 text-neutral-500"></i>Nome Completo
+                    </label>
+                    <input type="text" id="nome_completo" name="nome_completo" 
+                           value="{{ current_user.nome_completo or '' }}"
+                           class="w-full px-4 py-3 border border-neutral-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-citizenship-500 focus:border-citizenship-500 transition-colors"
+                           placeholder="Digite seu nome completo">
+                </div>
+                
+                <!-- CPF -->
+                <div>
+                    <label for="cpf" class="block text-sm font-medium text-neutral-700 mb-2">
+                        <i class="fas fa-id-card mr-2 text-neutral-500"></i>CPF
+                    </label>
+                    <input type="text" id="cpf" name="cpf" 
+                           value="{{ current_user.cpf or '' }}"
+                           class="w-full px-4 py-3 border border-neutral-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-citizenship-500 focus:border-citizenship-500 transition-colors"
+                           placeholder="000.000.000-00">
+                </div>
+                
+                <!-- Email -->
+                <div>
+                    <label for="email" class="block text-sm font-medium text-neutral-700 mb-2">
+                        <i class="fas fa-envelope mr-2 text-neutral-500"></i>E-mail
+                    </label>
+                    <input type="email" id="email" name="email" 
+                           value="{{ current_user.email }}"
+                           class="w-full px-4 py-3 border border-neutral-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-citizenship-500 focus:border-citizenship-500 transition-colors"
+                           placeholder="seu@email.com">
+                </div>
+                
+                <!-- Telefone -->
+                <div>
+                    <label for="telefone" class="block text-sm font-medium text-neutral-700 mb-2">
+                        <i class="fas fa-phone mr-2 text-neutral-500"></i>Telefone
+                    </label>
+                    <input type="tel" id="telefone" name="telefone" 
+                           value="{{ current_user.telefone or '' }}"
+                           class="w-full px-4 py-3 border border-neutral-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-citizenship-500 focus:border-citizenship-500 transition-colors"
+                           placeholder="(31) 99999-9999">
+                </div>
+            </div>
+            
+            <!-- Endereço -->
+            <div>
+                <label for="endereco" class="block text-sm font-medium text-neutral-700 mb-2">
+                    <i class="fas fa-map-marker-alt mr-2 text-neutral-500"></i>Endereço Completo
+                </label>
+                <textarea id="endereco" name="endereco" rows="3"
+                          class="w-full px-4 py-3 border border-neutral-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-citizenship-500 focus:border-citizenship-500 transition-colors resize-none"
+                          placeholder="Rua, número, bairro, cidade - CEP">{{ current_user.endereco or '' }}</textarea>
+            </div>
+            
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- CEP -->
+                <div>
+                    <label for="cep" class="block text-sm font-medium text-neutral-700 mb-2">
+                        <i class="fas fa-mail-bulk mr-2 text-neutral-500"></i>CEP
+                    </label>
+                    <input type="text" id="cep" name="cep" 
+                           value="{{ current_user.cep or '' }}"
+                           class="w-full px-4 py-3 border border-neutral-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-citizenship-500 focus:border-citizenship-500 transition-colors"
+                           placeholder="00000-000">
+                </div>
+                
+                <!-- Data de Nascimento -->
+                <div>
+                    <label for="data_nascimento" class="block text-sm font-medium text-neutral-700 mb-2">
+                        <i class="fas fa-calendar mr-2 text-neutral-500"></i>Data de Nascimento
+                    </label>
+                    <input type="date" id="data_nascimento" name="data_nascimento" 
+                           value="{{ current_user.data_nascimento or '' }}"
+                           class="w-full px-4 py-3 border border-neutral-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-citizenship-500 focus:border-citizenship-500 transition-colors">
+                </div>
+            </div>
+            
+            <!-- Botões -->
+            <div class="flex flex-col sm:flex-row gap-4 pt-6">
+                <button type="submit" class="hero-gradient text-white px-8 py-3 rounded-xl hover:shadow-lg transition-all duration-300 font-semibold flex items-center justify-center">
+                    <i class="fas fa-save mr-2"></i>Salvar Alterações
+                </button>
+                <a href="{{ url_for('index') }}" class="bg-neutral-100 text-neutral-700 px-8 py-3 rounded-xl hover:bg-neutral-200 transition-all duration-300 font-semibold flex items-center justify-center">
+                    <i class="fas fa-arrow-left mr-2"></i>Voltar
+                </a>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Security Settings -->
+    <div class="bg-white rounded-2xl shadow-lg border border-neutral-200 p-8 mb-8">
+        <h2 class="text-2xl font-bold text-neutral-900 mb-6">
+            <i class="fas fa-shield-alt mr-3 text-sustainability-500"></i>Segurança
+        </h2>
+        
+        <div class="space-y-4">
+            <div class="flex items-center justify-between p-4 bg-neutral-50 rounded-xl">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-key text-neutral-500"></i>
+                    <div>
+                        <h3 class="font-medium text-neutral-900">Alterar Senha</h3>
+                        <p class="text-sm text-neutral-600">Atualize sua senha para maior segurança</p>
+                    </div>
+                </div>
+                <button class="bg-sustainability-500 text-white px-4 py-2 rounded-lg hover:bg-sustainability-600 transition-colors">
+                    Alterar
+                </button>
+            </div>
+            
+            <div class="flex items-center justify-between p-4 bg-neutral-50 rounded-xl">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-bell text-neutral-500"></i>
+                    <div>
+                        <h3 class="font-medium text-neutral-900">Notificações</h3>
+                        <p class="text-sm text-neutral-600">Configure como receber atualizações</p>
+                    </div>
+                </div>
+                <button class="bg-citizenship-500 text-white px-4 py-2 rounded-lg hover:bg-citizenship-600 transition-colors">
+                    Configurar
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Account Stats -->
+    <div class="bg-white rounded-2xl shadow-lg border border-neutral-200 p-8">
+        <h2 class="text-2xl font-bold text-neutral-900 mb-6">
+            <i class="fas fa-chart-line mr-3 text-neutral-500"></i>Estatísticas da Conta
+        </h2>
+        
+        <div class="grid md:grid-cols-3 gap-6">
+            <div class="text-center p-6 bg-citizenship-50 rounded-xl">
+                <div class="w-16 h-16 bg-citizenship-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-lightbulb text-white text-2xl"></i>
+                </div>
+                <div class="text-2xl font-bold text-citizenship-700">12</div>
+                <div class="text-sm text-citizenship-600">Propostas Criadas</div>
+            </div>
+            
+            <div class="text-center p-6 bg-sustainability-50 rounded-xl">
+                <div class="w-16 h-16 bg-sustainability-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-thumbs-up text-white text-2xl"></i>
+                </div>
+                <div class="text-2xl font-bold text-sustainability-700">48</div>
+                <div class="text-sm text-sustainability-600">Votos Recebidos</div>
+            </div>
+            
+            <div class="text-center p-6 bg-neutral-50 rounded-xl">
+                <div class="w-16 h-16 bg-neutral-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-comments text-white text-2xl"></i>
+                </div>
+                <div class="text-2xl font-bold text-neutral-700">23</div>
+                <div class="text-sm text-neutral-600">Comentários</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Máscara para CPF
+document.getElementById('cpf').addEventListener('input', function(e) {
+    let value = e.target.value.replace(/\D/g, '');
+    value = value.replace(/(\d{3})(\d)/, '$1.$2');
+    value = value.replace(/(\d{3})(\d)/, '$1.$2');
+    value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    e.target.value = value;
+});
+
+// Máscara para telefone
+document.getElementById('telefone').addEventListener('input', function(e) {
+    let value = e.target.value.replace(/\D/g, '');
+    value = value.replace(/(\d{2})(\d)/, '($1) $2');
+    value = value.replace(/(\d{4})(\d)/, '$1-$2');
+    value = value.replace(/(\d{4})-(\d)(\d{4})/, '$1$2-$3');
+    e.target.value = value;
+});
+
+// Máscara para CEP
+document.getElementById('cep').addEventListener('input', function(e) {
+    let value = e.target.value.replace(/\D/g, '');
+    value = value.replace(/(\d{5})(\d)/, '$1-$2');
+    e.target.value = value;
+});
+</script>
+{% endblock %}
