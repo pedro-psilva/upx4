@@ -74,7 +74,7 @@
     {% if proposals.items %}
         <div id="proposalsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {% for proposal in proposals.items %}
-            <div class="bg-white rounded-2xl shadow-lg border border-neutral-200 card-hover animate-fadeInUp" style="animation-delay: {{ loop.index0 * 0.1 }}s;">
+            <div class="proposal-card card-hover animate-fadeInUp" style="animation-delay: {{ loop.index0 * 0.1 }}s;">
                 <!-- Category Header -->
                 <div class="category-{{ proposal.category }} p-4 rounded-t-2xl">
                     <div class="flex items-center justify-between mb-3">
@@ -120,7 +120,7 @@
                             <span>{{ proposal.votes_count }} votos</span>
                         </div>
                         <div class="w-full bg-neutral-200 rounded-full h-2">
-                            <div class="progress-bar h-2 rounded-full" style="width: {{ (proposal.votes_count / 50 * 100) | round }}%"></div>
+                            <div class="progress-bar-professional h-2 rounded-full" style="width: {{ (proposal.votes_count / 50 * 100) | round }}%"></div>
                         </div>
                     </div>
                     
@@ -142,7 +142,7 @@
                     <!-- Actions -->
                     <div class="flex items-center space-x-2">
                         <button onclick="voteProposal({{ proposal.id }})" 
-                                class="flex-1 hero-gradient text-white py-3 px-4 rounded-xl hover:shadow-lg transition-all duration-300 text-sm font-semibold">
+                                class="btn-primary flex-1">
                             <i class="fas fa-thumbs-up mr-2"></i>Votar
                         </button>
                         <button onclick="commentProposal({{ proposal.id }})" 
@@ -160,7 +160,7 @@
                 <div class="px-4 py-3 bg-neutral-50 border-t border-neutral-100 rounded-b-2xl">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center space-x-3">
-                            <div class="w-8 h-8 hero-gradient rounded-full flex items-center justify-center shadow-sm">
+                            <div class="w-8 h-8 user-avatar rounded-full flex items-center justify-center shadow-sm">
                                 <span class="text-white text-sm font-semibold">{{ proposal.author.name[0].upper() }}</span>
                             </div>
                             <div>
@@ -223,12 +223,12 @@
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
                 {% if current_user.is_authenticated %}
                     <a href="{{ url_for('criar_proposta') }}" 
-                       class="hero-gradient text-white px-8 py-4 rounded-xl font-semibold hover:shadow-xl transition-all duration-300 hover:scale-105">
+                       class="btn-primary px-8 py-4 rounded-xl font-semibold hover:shadow-xl transition-all duration-300 hover:scale-105">
                         <i class="fas fa-plus mr-2"></i>Criar Nova Proposta
                     </a>
                 {% else %}
                     <button onclick="openLoginModal()" 
-                            class="hero-gradient text-white px-8 py-4 rounded-xl font-semibold hover:shadow-xl transition-all duration-300 hover:scale-105">
+                            class="btn-primary px-8 py-4 rounded-xl font-semibold hover:shadow-xl transition-all duration-300 hover:scale-105">
                         <i class="fas fa-sign-in-alt mr-2"></i>Fazer Login para Participar
                     </button>
                 {% endif %}
