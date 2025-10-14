@@ -34,26 +34,39 @@ class Config:
     # Configurações de paginação
     POSTS_PER_PAGE = 12
     
-    # Configurações do mapa
-    DEFAULT_MAP_CENTER_LAT = -23.550520
-    DEFAULT_MAP_CENTER_LNG = -46.633308
-    DEFAULT_MAP_ZOOM = 13
+    # Configurações do mapa (Belo Horizonte, MG)
+    DEFAULT_MAP_CENTER_LAT = -19.9167
+    DEFAULT_MAP_CENTER_LNG = -43.9345
+    DEFAULT_MAP_ZOOM = 12
 
 class DevelopmentConfig(Config):
     """Configuração para desenvolvimento"""
     DEBUG = True
     SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URL') or 'sqlite:///meu_bairro_melhor_dev.db'
 
-class ProductionConfig(Config):
-    """Configuração para produção"""
-    DEBUG = False
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///meu_bairro_melhor.db'
 
 class TestingConfig(Config):
     """Configuração para testes"""
     TESTING = True
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
     WTF_CSRF_ENABLED = False
+
+class ProductionConfig(Config):
+    """Configuração para produção"""
+    DEBUG = False
+    TESTING = False
+    WTF_CSRF_ENABLED = True
+    WTF_CSRF_TIME_LIMIT = None
+    SESSION_COOKIE_SECURE = True
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    PERMANENT_SESSION_LIFETIME = timedelta(hours=1)
+    
+    # Configurações de segurança
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_pre_ping': True,
+        'pool_recycle': 300,
+    }
 
 # Dicionário de configurações
 config = {

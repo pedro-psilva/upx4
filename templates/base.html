@@ -148,10 +148,6 @@
                 
                 <!-- User Menu -->
                 <div class="flex items-center space-x-4">
-                    <!-- Accessibility Toggle -->
-                    <button id="accessibility-toggle" class="p-2 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded-lg transition-colors" title="Modo Acessível">
-                        <i class="fas fa-universal-access"></i>
-                    </button>
                     
                     {% if current_user.is_authenticated %}
                         <a href="{{ url_for('criar_proposta') }}" class="btn-primary px-6 py-2 rounded-lg hover:shadow-lg transition-all duration-300 font-medium">
@@ -664,23 +660,6 @@
             }
         });
 
-        // Accessibility toggle
-        document.getElementById('accessibility-toggle').addEventListener('click', function() {
-            document.body.classList.toggle('accessibility-mode');
-            const isActive = document.body.classList.contains('accessibility-mode');
-            this.innerHTML = isActive ? '<i class="fas fa-universal-access text-citizenship-600"></i>' : '<i class="fas fa-universal-access"></i>';
-            this.title = isActive ? 'Desativar Modo Acessível' : 'Ativar Modo Acessível';
-            
-            // Save preference
-            localStorage.setItem('accessibility-mode', isActive);
-        });
-
-        // Load accessibility preference
-        if (localStorage.getItem('accessibility-mode') === 'true') {
-            document.body.classList.add('accessibility-mode');
-            document.getElementById('accessibility-toggle').innerHTML = '<i class="fas fa-universal-access text-citizenship-600"></i>';
-            document.getElementById('accessibility-toggle').title = 'Desativar Modo Acessível';
-        }
 
         // Utility functions
         function showNotification(message, type = 'success') {

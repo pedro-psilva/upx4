@@ -11,7 +11,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import os
 import requests
-import json
 from sqlalchemy import func, case
 from reportlab.lib.pagesizes import A4
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
@@ -23,8 +22,8 @@ from io import BytesIO
 
 # Criar aplicação Flask
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'sua-chave-secreta-aqui'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///meu_bairro_melhor.db'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or 'sua-chave-secreta-aqui-mude-em-producao'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL') or 'sqlite:///meu_bairro_melhor.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Inicializar extensões
@@ -534,8 +533,8 @@ def api_proposals():
             'title': p.title,
             'description': p.description,
             'category': p.category,
-            'latitude': p.latitude,
-            'longitude': p.longitude,
+            'latitude': float(p.latitude),
+            'longitude': float(p.longitude),
             'address': p.address,
             'status': p.status,
             'priority': p.priority,
@@ -562,6 +561,30 @@ def api_categories():
         'icon': c.icon,
         'color': c.color
     } for c in categories])
+
+@app.route('/api/map-proposals')
+def api_map_proposals():
+    """API específica para o mapa - retorna todas as propostas"""
+    proposals = Proposal.query.all()
+    return jsonify({
+        'proposals': [{
+            'id': p.id,
+            'title': p.title,
+            'description': p.description,
+            'category': p.category,
+            'latitude': float(p.latitude),
+            'longitude': float(p.longitude),
+            'address': p.address,
+            'status': p.status,
+            'priority': p.priority,
+            'votes_count': p.votes_count,
+            'comments_count': p.comments_count,
+            'author_name': p.author.name if p.author else 'Anônimo',
+            'created_at': p.created_at.isoformat(),
+            'updated_at': p.updated_at.isoformat()
+        } for p in proposals],
+        'total': len(proposals)
+    })
 
 # ===== INICIALIZAÇÃO =====
 
@@ -651,13 +674,13 @@ def init_database():
                     db.session.add(category)
                 
                 db.session.commit()
-                print("✅ Categorias padrão criadas!")
+                print("Categorias padrao criadas!")
         except Exception as e:
-            print(f"❌ Erro ao inicializar banco: {e}")
-            print("🔄 Tentando recriar banco...")
+            print(f"Erro ao inicializar banco: {e}")
+            print("Tentando recriar banco...")
             db.drop_all()
             db.create_all()
-            print("✅ Banco recriado com sucesso!")
+            print("Banco recriado com sucesso!")
 
 # ===== RELATÓRIOS =====
 
@@ -1030,7 +1053,7 @@ def strftime_filter(date, format='%d/%m/%Y'):
     return ''
 
 if __name__ == '__main__':
-    print("🚀 Iniciando Meu Bairro Melhor...")
+    print("Iniciando Meu Bairro Melhor...")
     
     # Inicializar banco de dados
     init_database()
@@ -1040,10 +1063,10 @@ if __name__ == '__main__':
     port = int(os.environ.get('FLASK_PORT', 5000))
     debug = os.environ.get('FLASK_ENV', 'development') == 'development'
     
-    print(f"🌐 Servidor rodando em: http://{host}:{port}")
-    print(f"🔧 Modo debug: {'Ativado' if debug else 'Desativado'}")
-    print("📊 Dashboard: http://{}:{}/dashboard".format(host, port))
-    print("🗺️  Mapa: http://{}:{}/mapa".format(host, port))
+    print(f"Servidor rodando em: http://{host}:{port}")
+    print(f"Modo debug: {'Ativado' if debug else 'Desativado'}")
+    print("Dashboard: http://{}:{}/dashboard".format(host, port))
+    print("Mapa: http://{}:{}/mapa".format(host, port))
     print("\nPressione Ctrl+C para parar")
     
     app.run(host=host, port=port, debug=debug)

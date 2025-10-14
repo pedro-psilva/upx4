@@ -112,7 +112,7 @@
 
     <!-- Map Container -->
     <div class="bg-white rounded-2xl shadow-lg border border-neutral-200 overflow-hidden">
-        <div id="map" class="map-container w-full"></div>
+        <div id="map" class="map-container w-full" style="width: 100% !important; height: 100% !important; min-height: 400px; z-index: 1;"></div>
     </div>
 
     <!-- Selected Proposal Info -->
@@ -156,23 +156,60 @@
     
     // Initialize map
     function initMap() {
+        console.log('Initializing map...');
+        
+        // Check if map element exists
+        const mapElement = document.getElementById('map');
+        if (!mapElement) {
+            console.error('Map element not found!');
+            return;
+        }
+        
+        console.log('Map element found, creating map...');
+        
         // Center on Belo Horizonte, MG
-        map = L.map('map').setView([-19.9167, -43.9345], 12);
+        map = L.map('map', {
+            center: [-19.9167, -43.9345],
+            zoom: 13,
+            zoomControl: true,
+            attributionControl: true,
+            dragging: true,
+            touchZoom: true,
+            doubleClickZoom: true,
+            scrollWheelZoom: true,
+            boxZoom: true,
+            keyboard: true
+        });
+        console.log('Map created and centered');
         
         // Add OpenStreetMap tiles
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19,
+            minZoom: 3
         }).addTo(map);
+        console.log('Tiles added to map');
         
         // Load proposals
         loadProposals();
+        
+        // Force map resize after a short delay
+        setTimeout(() => {
+            if (map) {
+                map.invalidateSize();
+                console.log('Map size invalidated');
+            }
+        }, 500);
     }
     
     // Load proposals from API
     async function loadProposals() {
         try {
-            const response = await fetch('/api/proposals');
+            console.log('Loading proposals from API...');
+            const response = await fetch('/api/map-proposals');
             const data = await response.json();
+            
+            console.log('Proposals loaded:', data.proposals.length);
             
             // Clear existing markers
             markers.forEach(marker => map.removeLayer(marker));
@@ -180,8 +217,26 @@
             
             // Add markers for each proposal
             data.proposals.forEach(proposal => {
+                console.log('Adding marker for proposal:', proposal.title, 'at', proposal.latitude, proposal.longitude);
                 addProposalMarker(proposal);
             });
+            
+            console.log('Total markers added:', markers.length);
+            
+            // Ajustar o mapa para mostrar todos os marcadores
+            if (markers.length > 0) {
+                const group = new L.featureGroup(markers);
+                const bounds = group.getBounds();
+                console.log('Map bounds:', bounds);
+                map.fitBounds(bounds.pad(0.1));
+                console.log('Map bounds adjusted to show all markers');
+                
+                // Force another resize after bounds adjustment
+                setTimeout(() => {
+                    map.invalidateSize();
+                    console.log('Map size invalidated after bounds adjustment');
+                }, 100);
+            }
         } catch (error) {
             console.error('Error loading proposals:', error);
         }
@@ -189,10 +244,12 @@
     
     // Add proposal marker to map
     function addProposalMarker(proposal) {
+        console.log('Adding marker for:', proposal.title, 'Coordinates:', proposal.latitude, proposal.longitude);
+        
         // Validate coordinates
         if (!proposal.latitude || !proposal.longitude || 
             isNaN(proposal.latitude) || isNaN(proposal.longitude)) {
-            console.warn('Invalid coordinates for proposal:', proposal.title);
+            console.warn('Invalid coordinates for proposal:', proposal.title, proposal.latitude, proposal.longitude);
             return;
         }
         
@@ -225,8 +282,14 @@
                         </span>
                         <span class="text-gray-500">${proposal.votes_count} votos</span>
                     </div>
+                    <div class="text-xs text-gray-400 mt-1">
+                        Lat: ${proposal.latitude}, Lng: ${proposal.longitude}
+                    </div>
                 </div>
             `);
+        
+        // Store proposal data in marker for filtering
+        marker.proposal = proposal;
         
         // Add click handler
         marker.on('click', function() {
@@ -234,6 +297,7 @@
         });
         
         markers.push(marker);
+        console.log('Marker added successfully for:', proposal.title);
     }
     
     // Get category info
@@ -481,15 +545,20 @@
         window.location.href = `/proposta/${proposalId}#comments`;
     }
     
-    // Store proposal data in markers for filtering
-    function addProposalMarker(proposal) {
-        // ... existing code ...
-        marker.proposal = proposal; // Store proposal data
-        // ... rest of existing code ...
-    }
     
     // Initialize map when page loads
-    document.addEventListener('DOMContentLoaded', initMap);
+    document.addEventListener('DOMContentLoaded', function() {
+        // Small delay to ensure DOM is fully loaded
+        setTimeout(initMap, 100);
+        
+        // Additional resize after a longer delay to ensure all elements are loaded
+        setTimeout(() => {
+            if (map) {
+                map.invalidateSize();
+                console.log('Final map size invalidation');
+            }
+        }, 1000);
+    });
 </script>
 
 <style>
@@ -500,6 +569,60 @@
     
     .leaflet-popup-content {
         margin: 0 !important;
+    }
+    
+    /* Ensure map container is visible */
+    #map {
+        width: 100% !important;
+        height: 100% !important;
+        min-height: 400px;
+        z-index: 1;
+    }
+    
+    .map-container {
+        position: relative;
+        z-index: 1;
+        width: 100% !important;
+        height: 100% !important;
+        min-height: 400px;
+    }
+    
+    /* Ensure Leaflet controls are visible */
+    .leaflet-control-container {
+        z-index: 10;
+    }
+    
+    /* Ensure map is interactive */
+    .leaflet-container {
+        pointer-events: auto !important;
+        touch-action: auto !important;
+    }
+    
+    /* Ensure map controls are interactive */
+    .leaflet-control-zoom {
+        pointer-events: auto !important;
+    }
+    
+    .leaflet-control-attribution {
+        pointer-events: auto !important;
+    }
+    
+    /* Ensure no overlay is blocking map interaction */
+    .map-container {
+        pointer-events: auto !important;
+    }
+    
+    .map-container * {
+        pointer-events: auto !important;
+    }
+    
+    /* Remove any potential overlay blocking */
+    .leaflet-overlay-pane {
+        pointer-events: auto !important;
+    }
+    
+    .leaflet-marker-pane {
+        pointer-events: auto !important;
     }
 </style>
 {% endblock %}
