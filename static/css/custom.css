@@ -867,7 +867,14 @@ img[src*="favicon"] {
 }
 
 /* Sidebar Scroll Improvements */
-#sidebar .flex-1 {
+/* Quando sidebar está recolhida, ocultar scroll */
+.sidebar-container:not(:hover) .flex-1 {
+    overflow: hidden !important;
+}
+
+/* Quando sidebar está expandida, mostrar scroll */
+.sidebar-container:hover .flex-1 {
+    overflow-y: auto !important;
     scrollbar-width: thin;
     scrollbar-color: #d1d5db #f9fafb;
 }

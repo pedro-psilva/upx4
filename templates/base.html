@@ -117,7 +117,7 @@
                         <button id="sidebar-toggle" class="lg:hidden p-2 rounded-md text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 transition-colors">
                             <i class="fas fa-bars"></i>
                         </button>
-                        <a href="{{ url_for('index') }}" class="flex items-center space-x-3">
+                        <a href="{{ url_for('index') }}" class="flex items-center space-x-3 lg:ml-10">
                             <div class="w-10 h-10 rounded-xl flex items-center justify-center shadow-md overflow-hidden">
                                 <img src="{{ url_for('static', filename='images/logo-upx4.png') }}" 
                                      alt="Logo Meu Bairro Melhor" 
@@ -204,12 +204,6 @@
                 <button id="sidebar-close" class="lg:hidden p-2 rounded-lg text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 transition-colors">
                     <i class="fas fa-times"></i>
                 </button>
-                <!-- Logo para sidebar recolhida -->
-                <div class="sidebar-logo">
-                    <img src="{{ url_for('static', filename='images/logo-upx4.png') }}" 
-                         alt="Logo Meu Bairro Melhor" 
-                         class="w-8 h-8 object-contain rounded-full">
-                </div>
             </div>
         </div>
         
