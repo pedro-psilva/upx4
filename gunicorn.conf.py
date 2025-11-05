@@ -1,8 +1,10 @@
 # Gunicorn configuration file
 import multiprocessing
+import os
 
-# Server socket
-bind = "0.0.0.0:8000"
+# Server socket - usar PORT do ambiente (Railway, Render, etc.) ou padrão 8000
+port = int(os.environ.get('PORT', 8000))
+bind = f"0.0.0.0:{port}"
 backlog = 2048
 
 # Worker processes
