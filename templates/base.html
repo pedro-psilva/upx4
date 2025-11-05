@@ -110,22 +110,22 @@
     <body class="min-h-screen gradient-bg">
         <!-- Header -->
         <header class="bg-white shadow-lg border-b border-neutral-200">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between items-center h-16">
+            <div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+                <div class="flex justify-between items-center h-14 sm:h-16">
                     <!-- Logo -->
-                    <div class="flex items-center">
-                        <button id="sidebar-toggle" class="lg:hidden p-2 rounded-md text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 transition-colors">
-                            <i class="fas fa-bars"></i>
+                    <div class="flex items-center flex-1 min-w-0">
+                        <button id="sidebar-toggle" class="lg:hidden p-2 rounded-md text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 transition-colors mr-1">
+                            <i class="fas fa-bars text-lg"></i>
                         </button>
-                        <a href="{{ url_for('index') }}" class="flex items-center space-x-3 lg:ml-10">
-                            <div class="w-10 h-10 rounded-xl flex items-center justify-center shadow-md overflow-hidden">
+                        <a href="{{ url_for('index') }}" class="flex items-center space-x-2 sm:space-x-3 lg:ml-10 flex-shrink-0">
+                            <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shadow-md overflow-hidden flex-shrink-0">
                                 <img src="{{ url_for('static', filename='images/logo-upx4.png') }}" 
                                      alt="Logo Meu Bairro Melhor" 
                                      class="w-full h-full object-contain logo-image">
                             </div>
-                            <div>
-                                <span class="text-xl font-bold text-neutral-900">Meu Bairro Melhor</span>
-                                <p class="text-xs text-neutral-500 -mt-1">Participação Cidadã</p>
+                            <div class="hidden sm:block min-w-0">
+                                <span class="text-base sm:text-xl font-bold text-neutral-900 block truncate">Meu Bairro Melhor</span>
+                                <p class="text-xs text-neutral-500 -mt-1 hidden md:block">Participação Cidadã</p>
                             </div>
                         </a>
                     </div>
@@ -147,24 +147,24 @@
                 </nav>
                 
                 <!-- User Menu -->
-                <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-1 sm:space-x-2 lg:space-x-4 ml-2">
                     
                     {% if current_user.is_authenticated %}
-                        <a href="{{ url_for('criar_proposta') }}" class="btn-primary px-6 py-2 rounded-lg hover:shadow-lg transition-all duration-300 font-medium">
-                            <i class="fas fa-plus mr-2"></i>Nova Proposta
+                        <a href="{{ url_for('criar_proposta') }}" class="btn-primary px-2 sm:px-4 lg:px-6 py-1.5 sm:py-2 rounded-lg hover:shadow-lg transition-all duration-300 font-medium text-xs sm:text-sm">
+                            <i class="fas fa-plus sm:mr-2"></i><span class="hidden sm:inline">Nova Proposta</span>
                         </a>
                         <div class="relative group">
-                            <button class="flex items-center space-x-3 text-neutral-700 hover:text-neutral-900 p-2 rounded-lg hover:bg-neutral-50 transition-colors">
-                                <div class="w-10 h-10 user-avatar rounded-full flex items-center justify-center shadow-md">
-                                    <span class="text-white text-sm font-semibold">{{ current_user.name[0].upper() }}</span>
+                            <button class="flex items-center space-x-1 sm:space-x-3 text-neutral-700 hover:text-neutral-900 p-1 sm:p-2 rounded-lg hover:bg-neutral-50 transition-colors">
+                                <div class="w-8 h-8 sm:w-10 sm:h-10 user-avatar rounded-full flex items-center justify-center shadow-md">
+                                    <span class="text-white text-xs sm:text-sm font-semibold">{{ current_user.name[0].upper() }}</span>
                                 </div>
                                 <div class="hidden md:block text-left">
                                     <div class="text-sm font-medium">{{ current_user.nome_completo or current_user.name }}</div>
                                     <div class="text-xs text-neutral-500">Vizinho Colaborador</div>
                                 </div>
-                                <i class="fas fa-chevron-down text-xs"></i>
+                                <i class="fas fa-chevron-down text-xs hidden sm:block"></i>
                             </button>
-                            <div class="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-neutral-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300">
+                            <div class="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-neutral-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
                                 <div class="p-2">
                                     <a href="{{ url_for('perfil') }}" class="flex items-center space-x-3 px-3 py-2 text-sm text-neutral-700 hover:bg-neutral-50 rounded-lg transition-colors">
                                         <i class="fas fa-user text-neutral-500"></i>
@@ -179,12 +179,12 @@
                             </div>
                         </div>
                     {% else %}
-                        <button onclick="openLoginModal()" class="flex items-center space-x-2 text-neutral-600 hover:text-neutral-900 font-medium px-4 py-2 rounded-lg hover:bg-neutral-50 transition-colors">
+                        <button onclick="openLoginModal()" class="flex items-center space-x-1 sm:space-x-2 text-neutral-600 hover:text-neutral-900 font-medium px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg hover:bg-neutral-50 transition-colors text-xs sm:text-sm">
                             <i class="fas fa-sign-in-alt"></i>
-                            <span>Entrar</span>
+                            <span class="hidden sm:inline">Entrar</span>
                         </button>
-                        <button onclick="openRegisterModal()" class="btn-primary px-6 py-2 rounded-lg hover:shadow-lg transition-all duration-300 font-medium">
-                            <i class="fas fa-user-plus mr-2"></i>Cadastrar
+                        <button onclick="openRegisterModal()" class="btn-primary px-3 sm:px-4 lg:px-6 py-1.5 sm:py-2 rounded-lg hover:shadow-lg transition-all duration-300 font-medium text-xs sm:text-sm">
+                            <i class="fas fa-user-plus sm:mr-2"></i><span class="hidden sm:inline">Cadastrar</span>
                         </button>
                     {% endif %}
                 </div>

@@ -482,6 +482,27 @@ img[src*="favicon"] {
     .proposal-card:hover {
         transform: none;
     }
+    
+    /* Header mobile optimizations */
+    header {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+    
+    /* Garantir que o header não quebre em telas muito pequenas */
+    header .flex {
+        flex-wrap: nowrap;
+        overflow: hidden;
+    }
+    
+    /* Logo no mobile - apenas ícone em telas muito pequenas */
+    @media (max-width: 360px) {
+        header .logo-image {
+            width: 32px;
+            height: 32px;
+        }
+    }
 }
 
 /* Sidebar Dynamic Hover Effects */
@@ -830,6 +851,22 @@ img[src*="favicon"] {
 
 /* Mobile optimizations */
 @media (max-width: 640px) {
+    /* Header adjustments for small screens */
+    header .btn-primary {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.75rem;
+    }
+    
+    /* Garantir que botões não quebrem */
+    header .flex.items-center {
+        gap: 0.25rem;
+    }
+    
+    /* User menu ajustado para mobile */
+    header .relative.group button {
+        padding: 0.25rem;
+    }
+    
     .hero-gradient {
         padding: 1.5rem 1rem;
     }
