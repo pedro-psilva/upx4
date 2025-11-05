@@ -11,9 +11,9 @@
     </div>
 
     <!-- Form -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
         <form id="createProposalForm">
-            <div class="space-y-6">
+            <div class="space-y-4 sm:space-y-6">
                 <!-- Title -->
                 <div>
                     <label for="title" class="block text-sm font-medium text-gray-700 mb-2">
@@ -77,13 +77,13 @@
                                 <label for="cep" class="block text-sm text-gray-600 mb-1">
                                     Buscar por CEP
                                 </label>
-                                <div class="flex space-x-2">
+                                <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                                     <input type="text" id="cep" name="cep"
-                                           class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                           class="flex-1 px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                            placeholder="00000-000" maxlength="9">
                                     <button type="button" id="buscarCepBtn"
-                                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                        <i class="fas fa-search"></i> Buscar
+                                            class="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base whitespace-nowrap">
+                                        <i class="fas fa-search mr-1 sm:mr-2"></i><span class="hidden sm:inline">Buscar</span><span class="sm:hidden">Buscar</span>
                                     </button>
                                 </div>
                                 <div id="cepResult" class="mt-2 text-sm text-gray-600 hidden"></div>
@@ -94,13 +94,13 @@
                                 <label for="endereco" class="block text-sm text-gray-600 mb-1">
                                     Buscar por Endereço
                                 </label>
-                                <div class="flex space-x-2">
+                                <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                                     <input type="text" id="endereco" name="endereco"
-                                           class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                           class="flex-1 px-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                            placeholder="Ex: Rua das Flores, 123 - Centro">
                                     <button type="button" id="buscarEnderecoBtn"
-                                            class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
-                                        <i class="fas fa-search"></i> Buscar
+                                            class="px-3 sm:px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm sm:text-base whitespace-nowrap">
+                                        <i class="fas fa-search mr-1 sm:mr-2"></i><span class="hidden sm:inline">Buscar</span><span class="sm:hidden">Buscar</span>
                                     </button>
                                 </div>
                                 <div id="enderecoResult" class="mt-2 text-sm text-gray-600 hidden"></div>
@@ -122,7 +122,7 @@
                             <label class="block text-sm text-gray-600 mb-1">
                                 Localização no mapa (atualizada automaticamente)
                             </label>
-                            <div id="locationMap" style="height: 300px;" class="border border-gray-300 rounded-md"></div>
+                            <div id="locationMap" style="height: 300px !important; min-height: 300px !important; width: 100% !important; position: relative !important; display: block !important; visibility: visible !important;" class="border border-gray-300 rounded-md"></div>
                             <p class="text-xs text-gray-500 mt-1">
                                 O mapa será atualizado automaticamente quando você buscar um endereço ou CEP
                             </p>
@@ -175,10 +175,20 @@
         const bhLat = -19.9167;
         const bhLng = -43.9345;
         
-        locationMap = L.map('locationMap').setView([bhLat, bhLng], 12);
+        locationMap = L.map('locationMap', {
+            dragging: true,
+            touchZoom: true,
+            doubleClickZoom: true,
+            scrollWheelZoom: true,
+            boxZoom: true,
+            keyboard: true,
+            tap: true
+        }).setView([bhLat, bhLng], 12);
         
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19,
+            minZoom: 3
         }).addTo(locationMap);
         
         // Store map reference globally for other functions
@@ -193,6 +203,33 @@
         // Set default coordinates
         document.getElementById('latitude').value = bhLat;
         document.getElementById('longitude').value = bhLng;
+        
+        // Force resize after initialization for mobile
+        setTimeout(() => {
+            if (locationMap) {
+                locationMap.invalidateSize();
+            }
+        }, 300);
+        
+        // Force resize on orientation change
+        window.addEventListener('orientationchange', function() {
+            setTimeout(() => {
+                if (locationMap) {
+                    locationMap.invalidateSize();
+                }
+            }, 500);
+        });
+        
+        // Force resize on window resize
+        let resizeTimer;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                if (locationMap) {
+                    locationMap.invalidateSize();
+                }
+            }, 250);
+        });
     }
     
     // ===== FUNCIONALIDADES DE BUSCA =====
@@ -241,7 +278,6 @@
         } catch (error) {
             cepResult.innerHTML = '<i class="fas fa-exclamation-triangle text-red-600 mr-2"></i>Erro ao buscar CEP';
             cepResult.classList.remove('hidden');
-            console.error('Erro ao buscar CEP:', error);
         }
     });
     
@@ -293,7 +329,6 @@
         } catch (error) {
             enderecoResult.innerHTML = '<i class="fas fa-exclamation-triangle text-red-600 mr-2"></i>Erro ao buscar endereço';
             enderecoResult.classList.remove('hidden');
-            console.error('Erro ao buscar endereço:', error);
         }
     });
     
@@ -356,7 +391,7 @@
                 }
             }
         } catch (error) {
-            console.error('Erro ao buscar coordenadas:', error);
+            // Silently handle error
         }
     }
     
@@ -434,11 +469,20 @@
         if (address && !document.getElementById('latitude').value) {
             // Here you could implement geocoding to automatically set coordinates
             // For now, we'll just show a message
-            console.log('Address entered:', address);
         }
     });
     
     // Initialize map when page loads
-    document.addEventListener('DOMContentLoaded', initLocationMap);
+    document.addEventListener('DOMContentLoaded', function() {
+        // Small delay to ensure DOM is fully loaded
+        setTimeout(initLocationMap, 100);
+        
+        // Additional resize after a longer delay
+        setTimeout(() => {
+            if (window.locationMap) {
+                window.locationMap.invalidateSize();
+            }
+        }, 500);
+    });
 </script>
 {% endblock %}

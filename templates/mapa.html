@@ -112,7 +112,7 @@
 
     <!-- Map Container -->
     <div class="bg-white rounded-2xl shadow-lg border border-neutral-200 overflow-hidden">
-        <div id="map" class="map-container w-full" style="width: 100% !important; height: 100% !important; min-height: 400px; z-index: 1;"></div>
+        <div id="map" class="map-container w-full" style="width: 100% !important; height: 400px !important; min-height: 400px; z-index: 1; position: relative;"></div>
     </div>
 
     <!-- Selected Proposal Info -->
@@ -156,16 +156,11 @@
     
     // Initialize map
     function initMap() {
-        console.log('Initializing map...');
-        
         // Check if map element exists
         const mapElement = document.getElementById('map');
         if (!mapElement) {
-            console.error('Map element not found!');
             return;
         }
-        
-        console.log('Map element found, creating map...');
         
         // Center on Belo Horizonte, MG
         map = L.map('map', {
@@ -180,7 +175,6 @@
             boxZoom: true,
             keyboard: true
         });
-        console.log('Map created and centered');
         
         // Add OpenStreetMap tiles
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -188,7 +182,6 @@
             maxZoom: 19,
             minZoom: 3
         }).addTo(map);
-        console.log('Tiles added to map');
         
         // Load proposals
         loadProposals();
@@ -197,7 +190,6 @@
         setTimeout(() => {
             if (map) {
                 map.invalidateSize();
-                console.log('Map size invalidated');
             }
         }, 500);
     }
@@ -205,11 +197,8 @@
     // Load proposals from API
     async function loadProposals() {
         try {
-            console.log('Loading proposals from API...');
             const response = await fetch('/api/map-proposals');
             const data = await response.json();
-            
-            console.log('Proposals loaded:', data.proposals.length);
             
             // Clear existing markers
             markers.forEach(marker => map.removeLayer(marker));
@@ -217,39 +206,30 @@
             
             // Add markers for each proposal
             data.proposals.forEach(proposal => {
-                console.log('Adding marker for proposal:', proposal.title, 'at', proposal.latitude, proposal.longitude);
                 addProposalMarker(proposal);
             });
-            
-            console.log('Total markers added:', markers.length);
             
             // Ajustar o mapa para mostrar todos os marcadores
             if (markers.length > 0) {
                 const group = new L.featureGroup(markers);
                 const bounds = group.getBounds();
-                console.log('Map bounds:', bounds);
                 map.fitBounds(bounds.pad(0.1));
-                console.log('Map bounds adjusted to show all markers');
                 
                 // Force another resize after bounds adjustment
                 setTimeout(() => {
                     map.invalidateSize();
-                    console.log('Map size invalidated after bounds adjustment');
                 }, 100);
             }
         } catch (error) {
-            console.error('Error loading proposals:', error);
+            // Silently handle errors
         }
     }
     
     // Add proposal marker to map
     function addProposalMarker(proposal) {
-        console.log('Adding marker for:', proposal.title, 'Coordinates:', proposal.latitude, proposal.longitude);
-        
         // Validate coordinates
         if (!proposal.latitude || !proposal.longitude || 
             isNaN(proposal.latitude) || isNaN(proposal.longitude)) {
-            console.warn('Invalid coordinates for proposal:', proposal.title, proposal.latitude, proposal.longitude);
             return;
         }
         
@@ -297,7 +277,6 @@
         });
         
         markers.push(marker);
-        console.log('Marker added successfully for:', proposal.title);
     }
     
     // Get category info
@@ -555,9 +534,28 @@
         setTimeout(() => {
             if (map) {
                 map.invalidateSize();
-                console.log('Final map size invalidation');
             }
         }, 1000);
+        
+        // Force resize on mobile after orientation change
+        window.addEventListener('orientationchange', function() {
+            setTimeout(() => {
+                if (map) {
+                    map.invalidateSize();
+                }
+            }, 500);
+        });
+        
+        // Force resize on window resize
+        let resizeTimer;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                if (map) {
+                    map.invalidateSize();
+                }
+            }, 250);
+        });
     });
 </script>
 
@@ -574,17 +572,38 @@
     /* Ensure map container is visible */
     #map {
         width: 100% !important;
-        height: 100% !important;
-        min-height: 400px;
+        height: 400px !important;
+        min-height: 400px !important;
+        max-height: 400px !important;
         z-index: 1;
+        position: relative !important;
+        display: block !important;
+        visibility: visible !important;
+    }
+    
+    @media (max-width: 640px) {
+        #map {
+            height: 300px !important;
+            min-height: 300px !important;
+            max-height: 300px !important;
+        }
     }
     
     .map-container {
-        position: relative;
-        z-index: 1;
+        position: relative !important;
+        z-index: 1 !important;
         width: 100% !important;
-        height: 100% !important;
-        min-height: 400px;
+        height: 400px !important;
+        min-height: 400px !important;
+        display: block !important;
+        visibility: visible !important;
+    }
+    
+    @media (max-width: 640px) {
+        .map-container {
+            height: 300px !important;
+            min-height: 300px !important;
+        }
     }
     
     /* Ensure Leaflet controls are visible */

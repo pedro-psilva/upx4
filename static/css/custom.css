@@ -847,6 +847,81 @@ img[src*="favicon"] {
     .card {
         padding: 1rem;
     }
+    
+    /* Garantir que elementos flex não quebrem em mobile */
+    .flex.items-start.justify-between {
+        flex-wrap: wrap;
+    }
+    
+    /* Botões em linha em mobile */
+    .flex.items-center.space-x-2 {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    /* Garantir que textos não saiam dos containers */
+    .break-words {
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+    
+    /* Padding reduzido em mobile */
+    .p-6 {
+        padding: 1rem;
+    }
+    
+    .p-4 {
+        padding: 0.75rem;
+    }
+    
+    /* Mapas responsivos no mobile */
+    #map, #proposalMap, #locationMap {
+        height: 300px !important;
+        min-height: 300px !important;
+        width: 100% !important;
+        position: relative !important;
+        display: block !important;
+        visibility: visible !important;
+        z-index: 1 !important;
+    }
+    
+    .map-container {
+        height: 300px !important;
+        min-height: 300px !important;
+        width: 100% !important;
+        position: relative !important;
+        display: block !important;
+        visibility: visible !important;
+    }
+    
+    /* Garantir que Leaflet funcione no mobile */
+    .leaflet-container {
+        height: 100% !important;
+        width: 100% !important;
+        position: relative !important;
+        display: block !important;
+        visibility: visible !important;
+        touch-action: pan-x pan-y !important;
+        -webkit-touch-callout: none !important;
+        -webkit-tap-highlight-color: transparent !important;
+    }
+    
+    /* Garantir que controles do mapa sejam clicáveis no mobile */
+    .leaflet-control-container {
+        z-index: 1000 !important;
+        pointer-events: auto !important;
+    }
+    
+    .leaflet-control {
+        pointer-events: auto !important;
+        touch-action: manipulation !important;
+    }
+    
+    /* Garantir que marcadores sejam clicáveis */
+    .leaflet-marker-pane {
+        pointer-events: auto !important;
+        z-index: 600 !important;
+    }
 }
 
 /* Mobile optimizations */
@@ -877,6 +952,56 @@ img[src*="favicon"] {
     
     .hero-gradient p {
         font-size: 0.9rem;
+    }
+    
+    /* Cards e containers responsivos */
+    .bg-white.rounded-lg {
+        padding: 1rem;
+    }
+    
+    /* Botões responsivos gerais */
+    button, .btn-primary, a.btn-primary {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+    
+    /* Inputs e forms responsivos */
+    input, textarea, select {
+        font-size: 0.875rem;
+        padding: 0.5rem 0.75rem;
+    }
+    
+    /* Títulos responsivos */
+    h1 {
+        font-size: 1.5rem;
+    }
+    
+    h2 {
+        font-size: 1.25rem;
+    }
+    
+    h3 {
+        font-size: 1.125rem;
+    }
+    
+    /* Grid de propostas responsivo */
+    .grid {
+        gap: 1rem;
+    }
+    
+    /* Flex containers responsivos */
+    .flex.items-start.justify-between {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    /* Espaçamento reduzido */
+    .space-y-6 > * + * {
+        margin-top: 1rem;
+    }
+    
+    .space-x-4 > * + * {
+        margin-left: 0.5rem;
     }
     
     .flex-col.sm\\:flex-row {

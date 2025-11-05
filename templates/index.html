@@ -4,27 +4,27 @@
 
 {% block content %}
 <!-- Hero Banner -->
-<div class="hero-gradient rounded-2xl p-8 mb-8 text-white relative overflow-hidden">
+<div class="hero-gradient rounded-2xl p-4 sm:p-6 md:p-8 mb-6 sm:mb-8 text-white relative overflow-hidden">
     <div class="absolute inset-0 bg-black bg-opacity-20"></div>
     <div class="relative z-10">
         <div class="max-w-4xl mx-auto text-center">
-            <h1 class="text-4xl md:text-5xl font-bold mb-4 animate-fadeInUp">
+            <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 sm:mb-4 animate-fadeInUp">
                 Construa um bairro melhor junto com seus vizinhos
             </h1>
-            <p class="text-xl mb-8 opacity-90 animate-fadeInUp" style="animation-delay: 0.2s;">
+            <p class="text-base sm:text-lg md:text-xl mb-4 sm:mb-6 md:mb-8 opacity-90 animate-fadeInUp px-2" style="animation-delay: 0.2s;">
                 Suas ideias podem transformar nossa comunidade. Participe, vote e colabore!
             </p>
-            <div class="flex flex-col sm:flex-row gap-4 justify-center animate-fadeInUp" style="animation-delay: 0.4s;">
+            <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center animate-fadeInUp px-2" style="animation-delay: 0.4s;">
                 {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('criar_proposta') }}" class="bg-white text-citizenship-600 px-8 py-4 rounded-xl font-semibold hover:shadow-xl transition-all duration-300 hover:scale-105">
+                    <a href="{{ url_for('criar_proposta') }}" class="bg-white text-citizenship-600 px-4 sm:px-6 md:px-8 py-3 sm:py-4 rounded-xl font-semibold hover:shadow-xl transition-all duration-300 hover:scale-105 text-sm sm:text-base">
                         <i class="fas fa-plus mr-2"></i>Fazer uma Sugestão
                     </a>
                 {% else %}
-                    <button onclick="openRegisterModal()" class="bg-white text-citizenship-600 px-8 py-4 rounded-xl font-semibold hover:shadow-xl transition-all duration-300 hover:scale-105">
+                    <button onclick="openRegisterModal()" class="bg-white text-citizenship-600 px-4 sm:px-6 md:px-8 py-3 sm:py-4 rounded-xl font-semibold hover:shadow-xl transition-all duration-300 hover:scale-105 text-sm sm:text-base">
                         <i class="fas fa-user-plus mr-2"></i>Cadastre-se para Participar
                     </button>
                 {% endif %}
-                <a href="{{ url_for('mapa') }}" class="border-2 border-white text-white px-8 py-4 rounded-xl font-semibold hover:bg-white hover:text-citizenship-600 transition-all duration-300">
+                <a href="{{ url_for('mapa') }}" class="border-2 border-white text-white px-4 sm:px-6 md:px-8 py-3 sm:py-4 rounded-xl font-semibold hover:bg-white hover:text-citizenship-600 transition-all duration-300 text-sm sm:text-base">
                     <i class="fas fa-map-marked-alt mr-2"></i>Ver no Mapa
                 </a>
             </div>
@@ -42,28 +42,28 @@
 <div class="space-y-6">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-            <h2 class="text-2xl font-bold text-neutral-900">Propostas da Comunidade</h2>
-            <p class="text-neutral-600">
+        <div class="min-w-0">
+            <h2 class="text-xl sm:text-2xl font-bold text-neutral-900">Propostas da Comunidade</h2>
+            <p class="text-sm sm:text-base text-neutral-600">
                 {{ proposals.total }} {{ 'proposta encontrada' if proposals.total == 1 else 'propostas encontradas' }}
             </p>
         </div>
         
-        <div class="flex items-center space-x-4">
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
             <!-- Search -->
-            <div class="relative">
-                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            <div class="relative flex-1 sm:flex-initial">
+                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
                 <input type="text" id="searchInput" placeholder="Buscar propostas..." 
                        value="{{ request.args.get('search', '') }}"
-                       class="pl-9 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500">
+                       class="w-full pl-9 pr-3 py-2 text-sm sm:text-base border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500">
             </div>
             
             <!-- View Mode Toggle -->
-            <div class="flex items-center space-x-1 bg-gray-100 rounded-md p-1">
-                <button id="gridView" class="p-2 rounded bg-white shadow-sm">
+            <div class="flex items-center space-x-1 bg-gray-100 rounded-md p-1 self-start sm:self-auto">
+                <button id="gridView" class="p-2 rounded bg-white shadow-sm text-sm sm:text-base">
                     <i class="fas fa-th"></i>
                 </button>
-                <button id="listView" class="p-2 rounded text-gray-600">
+                <button id="listView" class="p-2 rounded text-gray-600 text-sm sm:text-base">
                     <i class="fas fa-list"></i>
                 </button>
             </div>

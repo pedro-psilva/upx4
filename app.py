@@ -128,13 +128,18 @@ class Comment(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relacionamentos
-    user = db.relationship('User', backref='comments')
+    # Relacionamentos - usar lazy='joined' para garantir que usuários sejam carregados
+    user = db.relationship('User', backref='comments', lazy='joined')
     proposal = db.relationship('Proposal', backref='comments')
     
     @property
     def author_name(self):
-        return self.user.name if self.user else 'Usuário Anônimo'
+        try:
+            if self.user:
+                return self.user.name if self.user.name else 'Usuário Anônimo'
+            return 'Usuário Anônimo'
+        except Exception:
+            return 'Usuário Anônimo'
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -323,7 +328,15 @@ def dashboard():
 def proposta_detalhes(id):
     """Página de detalhes de uma proposta"""
     proposal = Proposal.query.get_or_404(id)
+    
+    # Buscar todos os comentários da proposta
     comments = Comment.query.filter_by(proposal_id=id).order_by(Comment.created_at.desc()).all()
+    
+    # Sincronizar contador de comentários com a contagem real
+    real_comments_count = Comment.query.filter_by(proposal_id=id).count()
+    if proposal.comments_count != real_comments_count:
+        proposal.comments_count = real_comments_count
+        db.session.commit()
     
     # Verificar se o usuário já votou
     user_voted = False
@@ -481,7 +494,11 @@ def comentar(proposal_id):
         )
         
         db.session.add(comment)
-        proposal.comments_count += 1
+        db.session.flush()  # Garante que o comentário tenha ID antes de contar
+        
+        # Recalcular contador de comentários baseado na contagem real
+        proposal.comments_count = Comment.query.filter_by(proposal_id=proposal_id).count()
+        
         db.session.commit()
         
         return jsonify({
@@ -492,7 +509,8 @@ def comentar(proposal_id):
                 'content': comment.content,
                 'author_name': comment.author_name,
                 'created_at': comment.created_at.isoformat()
-            }
+            },
+            'comments_count': proposal.comments_count
         })
     except Exception as e:
         db.session.rollback()
@@ -674,13 +692,9 @@ def init_database():
                     db.session.add(category)
                 
                 db.session.commit()
-                print("Categorias padrao criadas!")
         except Exception as e:
-            print(f"Erro ao inicializar banco: {e}")
-            print("Tentando recriar banco...")
             db.drop_all()
             db.create_all()
-            print("Banco recriado com sucesso!")
 
 # ===== RELATÓRIOS =====
 
@@ -1053,8 +1067,6 @@ def strftime_filter(date, format='%d/%m/%Y'):
     return ''
 
 if __name__ == '__main__':
-    print("Iniciando Meu Bairro Melhor...")
-    
     # Inicializar banco de dados
     init_database()
     
@@ -1062,11 +1074,5 @@ if __name__ == '__main__':
     host = os.environ.get('FLASK_HOST', '127.0.0.1')
     port = int(os.environ.get('FLASK_PORT', 5000))
     debug = os.environ.get('FLASK_ENV', 'development') == 'development'
-    
-    print(f"Servidor rodando em: http://{host}:{port}")
-    print(f"Modo debug: {'Ativado' if debug else 'Desativado'}")
-    print("Dashboard: http://{}:{}/dashboard".format(host, port))
-    print("Mapa: http://{}:{}/mapa".format(host, port))
-    print("\nPressione Ctrl+C para parar")
     
     app.run(host=host, port=port, debug=debug)
